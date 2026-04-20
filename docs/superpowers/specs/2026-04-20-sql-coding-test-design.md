@@ -5,6 +5,8 @@
 SQL 코딩 테스트(프로그래머스, LeetCode 스타일)를 연습/학습하기 위한 로컬 웹 환경.
 SELECT, JOIN, 서브쿼리, 윈도우 함수, CTE, DDL, DML 등 전 영역을 커버한다.
 
+**단일 사용자 로컬 환경**을 전제로 한다. 동시 요청(멀티탭 등)은 지원하지 않는다.
+
 ## 기술 스택
 
 | 영역 | 기술 |
@@ -13,7 +15,7 @@ SELECT, JOIN, 서브쿼리, 윈도우 함수, CTE, DDL, DML 등 전 영역을 �
 | SQL 실행 | JdbcTemplate |
 | 템플릿 엔진 | Thymeleaf |
 | SQL 에디터 | CodeMirror (webjars) |
-| 문제 관리 | YAML 파일 (SnakeYAML Engine) |
+| 문제 관리 | YAML 파일 (Spring 내장 SnakeYAML) |
 | DB (기본) | H2 인메모리 |
 | DB (선택) | MySQL 8.0 / PostgreSQL 16 (Docker) |
 | 컨테이너 | Docker Compose |
@@ -123,7 +125,11 @@ type: DDL
 schema: "001-schema.sql"
 validation:
   type: DDL_CHECK
-  check: "SELECT COUNT(*) FROM INFORMATION_SCHEMA.INDEXES WHERE TABLE_NAME='ORDERS' AND COLUMN_NAME='CUSTOMER_ID'"
+  # DB별로 다른 검증 쿼리 지원
+  checkPerProfile:
+    h2: "SELECT COUNT(*) FROM INFORMATION_SCHEMA.INDEXES WHERE TABLE_NAME='ORDERS' AND COLUMN_NAME='CUSTOMER_ID'"
+    mysql: "SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_NAME='orders' AND COLUMN_NAME='customer_id'"
+    postgres: "SELECT COUNT(*) FROM pg_indexes WHERE tablename='orders' AND indexdef LIKE '%customer_id%'"
   expectedValue: 1
 ```
 
@@ -178,6 +184,48 @@ record SubmitResult(
 
 DML 문제에서 데이터를 수정해도 다음 실행에 영향을 주지 않는다.
 
+### 에러 처리 및 제한
+
+- **쿼리 타임아웃**: 5초 (`JdbcTemplate.setQueryTimeout(5)`)
+- **최대 결과 행**: 1000행 초과 시 잘라서 반환 + 경고 메시지
+- **에러 응답**: SQL 에러 발생 시 `SqlResult`의 `columns`/`rows`는 빈 리스트, `message`에 에러 메시지 포함, HTTP 200 반환 (UI에서 에러 표시)
+- **차단 키워드**: `SHUTDOWN`, `DROP DATABASE`, `ALTER USER`, `CALL` 등 위험한 명령어는 실행 전 차단 (로컬 환경이지만 실수 방지 목적)
+
+### Model 정의
+
+```java
+record Problem(
+    String id,
+    String title,
+    String category,
+    int difficulty,
+    String description,
+    String type,          // SELECT | DML | DDL
+    String schema,        // schema SQL 파일명
+    Expected expected,    // SELECT/DML용 기대 결과
+    Validation validation,// DDL용 검증 정보
+    String hint
+) {}
+
+record Expected(
+    List<String> columns,
+    List<List<Object>> rows,
+    boolean orderMatters
+) {}
+
+record Validation(
+    String type,                    // DDL_CHECK
+    Map<String, String> checkPerProfile, // 프로파일별 검증 쿼리
+    int expectedValue
+) {}
+
+record Category(
+    String id,
+    String name,
+    int order
+) {}
+```
+
 ## 웹 UI 구성
 
 ### 페이지
@@ -227,6 +275,8 @@ DML 문제에서 데이터를 수정해도 다음 실행에 영향을 주지 않
 spring:
   application:
     name: database
+  profiles:
+    default: h2
 
 ---
 spring:
@@ -313,8 +363,20 @@ implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 implementation 'org.webjars.npm:codemirror:5.65.18'
 implementation 'org.webjars:webjars-locator-core'
 
-// YAML 파싱
-implementation 'org.snakeyaml:snakeyaml-engine:2.9'
+// YAML 파싱: Spring Boot 내장 SnakeYAML 사용 (별도 의존성 불필요)
+```
+
+## 프로젝트 루트 파일
+
+```
+database/
+├── build.gradle
+├── settings.gradle
+├── docker-compose.yaml
+├── src/
+│   └── ...
+└── docs/
+    └── ...
 ```
 
 ## 패키지 구조
@@ -336,5 +398,12 @@ lemuel.com.database
 │   └── SubmitResult.java
 └── model/
     ├── Problem.java
+    ├── Expected.java
+    ├── Validation.java
     └── Category.java
 ```
+
+## 비고
+
+- Lombok은 기존 build.gradle에 포함되어 있으나, 이 프로젝트에서는 Java record를 사용하므로 Lombok이 불필요하다. 기존 의존성은 유지하되 신규 클래스에는 사용하지 않는다.
+- 기존 build.gradle의 `spring-boot-starter-webmvc-test`는 `spring-boot-starter-test`로 수정한다.
