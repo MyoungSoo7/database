@@ -1,0 +1,16 @@
+id: "basic-001"
+title: "모든 직원 조회"
+category: "basic"
+difficulty: 1
+description: |
+  employees 테이블에서 모든 직원의 이름(name)과 부서(department)를 조회하세요.
+type: SELECT
+schema: "001-schema.sql"
+expected:
+  columns: ["name", "department"]
+  rows:
+    - ["김철수", "개발팀"]
+    - ["이영희", "기획팀"]
+    - ["박민수", "개발팀"]
+  orderMatters: false
+hint: "SELECT 컬럼명1, 컬럼명2 FROM 테이블명"

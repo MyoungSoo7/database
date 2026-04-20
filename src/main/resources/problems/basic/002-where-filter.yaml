@@ -1,0 +1,16 @@
+id: "basic-002"
+title: "조건으로 필터링"
+category: "basic"
+difficulty: 1
+description: |
+  employees 테이블에서 salary가 5000 이상인 직원의 이름(name)과 급여(salary)를 조회하세요.
+type: SELECT
+schema: "002-schema.sql"
+expected:
+  columns: ["name", "salary"]
+  rows:
+    - ["김철수", 5000]
+    - ["박민수", 5500]
+    - ["최동현", 6000]
+  orderMatters: false
+hint: "SELECT ... FROM ... WHERE 컬럼명 >= 값"

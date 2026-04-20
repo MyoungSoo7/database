@@ -1,0 +1,13 @@
+categories:
+  - id: basic
+    name: "기본 SELECT"
+    order: 1
+  - id: join
+    name: "JOIN"
+    order: 2
+  - id: advanced
+    name: "고급 쿼리 (서브쿼리, 윈도우함수, CTE)"
+    order: 3
+  - id: ddl
+    name: "DDL/제약조건"
+    order: 4
