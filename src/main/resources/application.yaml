@@ -1,3 +1,39 @@
 spring:
   application:
     name: database
+  profiles:
+    default: h2
+
+---
+spring:
+  config:
+    activate:
+      on-profile: h2
+  datasource:
+    url: jdbc:h2:mem:sqltest;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: true
+
+---
+spring:
+  config:
+    activate:
+      on-profile: mysql
+  datasource:
+    url: jdbc:mysql://localhost:3306/sqltest
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+---
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sqltest
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
