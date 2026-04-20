@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL 코딩 테스트 연습</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #333; }
+        header { background: #1a73e8; color: white; padding: 16px 32px; }
+        header h1 { font-size: 1.5rem; }
+        .container { max-width: 960px; margin: 32px auto; padding: 0 16px; }
+        .category-section { margin-bottom: 32px; }
+        .category-section h2 { font-size: 1.2rem; color: #1a73e8; border-bottom: 2px solid #1a73e8; padding-bottom: 8px; margin-bottom: 16px; }
+        .problem-list { list-style: none; }
+        .problem-item { background: white; border-radius: 8px; margin-bottom: 8px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 4px rgba(0,0,0,0.08); transition: box-shadow 0.2s; }
+        .problem-item:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.12); }
+        .problem-link { text-decoration: none; color: #333; font-weight: 500; flex: 1; }
+        .problem-link:hover { color: #1a73e8; }
+        .stars { color: #f4b400; font-size: 0.9rem; }
+        .empty { color: #999; font-style: italic; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>SQL 코딩 테스트 연습</h1>
+</header>
+<div class="container">
+    <div class="category-section" th:each="category : ${categories}">
+        <h2 th:text="${category.name()}">카테고리</h2>
+        <ul class="problem-list">
+            <li th:if="${#lists.isEmpty(problemsByCategory[category.id()])}">
+                <span class="empty">문제가 없습니다.</span>
+            </li>
+            <li class="problem-item" th:each="problem : ${problemsByCategory[category.id()]}">
+                <a class="problem-link"
+                   th:href="@{/problems/{id}(id=${problem.id()})}"
+                   th:text="${problem.title()}">문제 제목</a>
+                <span class="stars" th:text="${'★'.repeat(problem.difficulty())}">★</span>
+            </li>
+        </ul>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${problem.title()} + ' - SQL 코딩 테스트'">문제 상세</title>
+    <link rel="stylesheet" th:href="@{/webjars/codemirror/lib/codemirror.css}">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #333; height: 100vh; display: flex; flex-direction: column; }
+        header { background: #1a73e8; color: white; padding: 12px 24px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+        header a { color: white; text-decoration: none; font-size: 0.9rem; opacity: 0.85; }
+        header a:hover { opacity: 1; }
+        header h1 { font-size: 1.2rem; }
+        .main { display: flex; flex: 1; overflow: hidden; }
+        .left-panel { width: 40%; padding: 20px; overflow-y: auto; border-right: 1px solid #ddd; background: white; }
+        .right-panel { flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 12px; background: #f5f7fa; }
+        .section { margin-bottom: 20px; }
+        .section h3 { font-size: 0.85rem; text-transform: uppercase; color: #888; margin-bottom: 8px; }
+        .description { line-height: 1.7; white-space: pre-wrap; }
+        .stars { color: #f4b400; }
+        .schema-box { background: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', monospace; font-size: 0.82rem; padding: 12px; border-radius: 6px; white-space: pre; overflow-x: auto; }
+        .hint-box { background: #fff8e1; border-left: 4px solid #f4b400; padding: 12px; border-radius: 4px; display: none; }
+        .hint-box.visible { display: block; }
+        .editor-container { flex: 1; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; min-height: 200px; }
+        .CodeMirror { height: 100%; font-size: 0.9rem; }
+        .button-row { display: flex; gap: 10px; }
+        button { padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+        .btn-execute { background: #1a73e8; color: white; }
+        .btn-execute:hover { background: #1558b0; }
+        .btn-submit { background: #34a853; color: white; }
+        .btn-submit:hover { background: #277b3e; }
+        .btn-hint { background: #f4b400; color: white; }
+        .btn-hint:hover { background: #c49200; }
+        .result-area { background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; overflow-y: auto; max-height: 260px; }
+        .result-area table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .result-area th { background: #e8f0fe; color: #1a73e8; padding: 6px 10px; text-align: left; border: 1px solid #c5cae9; }
+        .result-area td { padding: 5px 10px; border: 1px solid #e0e0e0; }
+        .result-area tr:nth-child(even) td { background: #f8f9fa; }
+        .msg { padding: 6px 10px; border-radius: 4px; font-size: 0.85rem; }
+        .msg.ok { background: #e6f4ea; color: #1e8e3e; }
+        .msg.err { background: #fce8e6; color: #c5221f; }
+        .correct-label { font-weight: 700; color: #1e8e3e; margin-bottom: 8px; }
+        .wrong-label { font-weight: 700; color: #c5221f; margin-bottom: 8px; }
+        .result-section-title { font-size: 0.8rem; color: #555; margin: 8px 0 4px; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+<header>
+    <a th:href="@{/problems}">&#8592; 문제 목록</a>
+    <h1 th:text="${problem.title()}">문제 제목</h1>
+</header>
+
+<div class="main">
+    <!-- Left Panel -->
+    <div class="left-panel">
+        <div class="section">
+            <h3>문제 설명</h3>
+            <p class="description" th:text="${problem.description()}"></p>
+        </div>
+
+        <div class="section">
+            <h3>난이도</h3>
+            <span class="stars" th:text="${'★'.repeat(problem.difficulty())}">★</span>
+        </div>
+
+        <div class="section" th:if="${schemaContent != null and !#strings.isEmpty(schemaContent)}">
+            <h3>스키마</h3>
+            <div class="schema-box" th:text="${schemaContent}"></div>
+        </div>
+
+        <div class="section" th:if="${problem.hint() != null and !#strings.isEmpty(problem.hint())}">
+            <button class="btn-hint" onclick="toggleHint()">힌트 보기</button>
+            <div class="hint-box" id="hint-box" th:text="${problem.hint()}"></div>
+        </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="right-panel">
+        <div class="editor-container">
+            <textarea id="sql-editor">SELECT </textarea>
+        </div>
+
+        <div class="button-row">
+            <button class="btn-execute" onclick="executeQuery()">실행</button>
+            <button class="btn-submit" onclick="submitQuery()">제출</button>
+        </div>
+
+        <div class="result-area" id="result-area">
+            <span style="color:#aaa;">결과가 여기에 표시됩니다.</span>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/codemirror/lib/codemirror.js}"></script>
+<script th:src="@{/webjars/codemirror/mode/sql/sql.js}"></script>
+<script th:inline="javascript">
+    const problemId = /*[[${problem.id()}]]*/ 'unknown';
+
+    const editor = CodeMirror.fromTextArea(document.getElementById('sql-editor'), {
+        mode: 'text/x-sql',
+        lineNumbers: true,
+        theme: 'default',
+        indentWithTabs: false,
+        tabSize: 2
+    });
+
+    function toggleHint() {
+        const box = document.getElementById('hint-box');
+        box.classList.toggle('visible');
+    }
+
+    function executeQuery() {
+        const sql = editor.getValue();
+        fetch('/api/execute', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ problemId, sql })
+        })
+        .then(r => r.json())
+        .then(data => {
+            const area = document.getElementById('result-area');
+            if (data.message !== 'OK') {
+                area.innerHTML = '<div class="msg err">' + escapeHtml(data.message) + '</div>';
+            } else {
+                area.innerHTML =
+                    '<div class="msg ok">실행 완료 (' + data.executionTime + 'ms)</div>' +
+                    renderResult(data);
+            }
+        })
+        .catch(e => {
+            document.getElementById('result-area').innerHTML = '<div class="msg err">' + escapeHtml(e.message) + '</div>';
+        });
+    }
+
+    function submitQuery() {
+        const sql = editor.getValue();
+        fetch('/api/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ problemId, sql })
+        })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('result-area').innerHTML = renderSubmitResult(data);
+        })
+        .catch(e => {
+            document.getElementById('result-area').innerHTML = '<div class="msg err">' + escapeHtml(e.message) + '</div>';
+        });
+    }
+
+    function renderResult(data) {
+        if (!data.columns || data.columns.length === 0) return '';
+        let html = '<table><thead><tr>';
+        for (const col of data.columns) {
+            html += '<th>' + escapeHtml(col) + '</th>';
+        }
+        html += '</tr></thead><tbody>';
+        for (const row of data.rows) {
+            html += '<tr>';
+            for (const cell of row) {
+                html += '<td>' + escapeHtml(cell == null ? 'NULL' : String(cell)) + '</td>';
+            }
+            html += '</tr>';
+        }
+        html += '</tbody></table>';
+        return html;
+    }
+
+    function renderSubmitResult(data) {
+        let html = '';
+        if (data.correct) {
+            html += '<div class="correct-label">정답입니다! ✓</div>';
+        } else {
+            html += '<div class="wrong-label">오답입니다. ✗</div>';
+            if (data.feedback) {
+                html += '<div class="msg err">' + escapeHtml(data.feedback) + '</div>';
+            }
+        }
+
+        if (data.userResult && data.userResult.columns && data.userResult.columns.length > 0) {
+            html += '<div class="result-section-title">내 결과</div>';
+            html += renderResult(data.userResult);
+        }
+
+        if (data.expectedResult && data.expectedResult.columns && data.expectedResult.columns.length > 0) {
+            html += '<div class="result-section-title">정답</div>';
+            html += renderResult(data.expectedResult);
+        }
+
+        return html;
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+</script>
+</body>
+</html>
