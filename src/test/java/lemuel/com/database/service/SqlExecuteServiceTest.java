@@ -18,31 +18,38 @@ class SqlExecuteServiceTest {
     @Test
     void executeSelectQuery() {
         SqlResult result = sqlExecuteService.execute("basic-001", "SELECT name, department FROM employees");
-        // H2 uppercases column names
         assertThat(result.columns()).containsExactly("NAME", "DEPARTMENT");
         assertThat(result.rows()).hasSize(3);
         assertThat(result.message()).isEqualTo("OK");
+        assertThat(result.executionTime()).isGreaterThanOrEqualTo(0);
     }
 
     @Test
     void executeInvalidSql() {
         SqlResult result = sqlExecuteService.execute("basic-001", "SELECT * FROM nonexistent_table_xyz");
         assertThat(result.columns()).isEmpty();
+        assertThat(result.rows()).isEmpty();
         assertThat(result.message()).isNotBlank();
         assertThat(result.message()).isNotEqualTo("OK");
     }
 
     @Test
     void blockDangerousKeyword() {
-        SqlResult result = SqlExecuteService.checkBlocked("SHUTDOWN");
-        assertThat(result).isNotNull();
+        String blocked = SqlExecuteService.checkBlocked("SHUTDOWN");
+        assertThat(blocked).isNotNull();
+
+        SqlResult result = sqlExecuteService.execute("basic-001", "SHUTDOWN");
+        assertThat(result.columns()).isEmpty();
         assertThat(result.message()).contains("차단");
     }
 
     @Test
     void blockDropDatabase() {
-        SqlResult result = SqlExecuteService.checkBlocked("DROP DATABASE sqltest");
-        assertThat(result).isNotNull();
+        String blocked = SqlExecuteService.checkBlocked("DROP DATABASE sqltest");
+        assertThat(blocked).isNotNull();
+
+        SqlResult result = sqlExecuteService.execute("basic-001", "DROP DATABASE sqltest");
+        assertThat(result.columns()).isEmpty();
         assertThat(result.message()).contains("차단");
     }
 }

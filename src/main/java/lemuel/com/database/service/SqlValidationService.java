@@ -6,164 +6,136 @@ import lemuel.com.database.model.Expected;
 import lemuel.com.database.model.Problem;
 import lemuel.com.database.model.Validation;
 import org.springframework.core.env.Environment;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class SqlValidationService {
 
-    private final ProblemService problemService;
     private final SqlExecuteService sqlExecuteService;
+    private final ProblemService problemService;
+    private final JdbcTemplate jdbcTemplate;
     private final SchemaService schemaService;
-    private final Environment environment;
+    private final String activeProfile;
 
-    public SqlValidationService(ProblemService problemService,
-                                SqlExecuteService sqlExecuteService,
+    public SqlValidationService(SqlExecuteService sqlExecuteService,
+                                ProblemService problemService,
+                                JdbcTemplate jdbcTemplate,
                                 SchemaService schemaService,
                                 Environment environment) {
-        this.problemService = problemService;
         this.sqlExecuteService = sqlExecuteService;
+        this.problemService = problemService;
+        this.jdbcTemplate = jdbcTemplate;
         this.schemaService = schemaService;
-        this.environment = environment;
+        String[] profiles = environment.getActiveProfiles();
+        this.activeProfile = profiles.length > 0 ? profiles[0] : "h2";
     }
 
     public SubmitResult validate(String problemId, String sql) {
         Optional<Problem> problemOpt = problemService.getProblemById(problemId);
         if (problemOpt.isEmpty()) {
-            return new SubmitResult(false, emptySqlResult(), emptySqlResult(), "문제를 찾을 수 없습니다: " + problemId);
+            return new SubmitResult(false, null, null, "문제를 찾을 수 없습니다: " + problemId);
         }
 
         Problem problem = problemOpt.get();
-        String type = problem.type() != null ? problem.type().toUpperCase() : "SELECT";
 
-        if ("SELECT".equals(type)) {
-            return validateSelect(problem, sql);
-        } else {
-            return validateDdl(problem, sql);
+        SqlResult userResult = sqlExecuteService.execute(problemId, sql);
+
+        if (!userResult.message().startsWith("OK") && !userResult.message().contains("영향")) {
+            return new SubmitResult(false, userResult, null, "SQL 실행 오류: " + userResult.message());
         }
+
+        if ("DDL".equals(problem.type())) {
+            return validateDdl(problem, userResult, sql);
+        }
+
+        return validateSelect(problem, userResult);
     }
 
-    private SubmitResult validateSelect(Problem problem, String sql) {
-        // Safety check first
-        SqlResult blocked = SqlExecuteService.checkBlocked(sql);
-        if (blocked != null) {
-            return new SubmitResult(false, blocked, emptySqlResult(), "차단된 SQL입니다.");
-        }
-
-        SqlResult userResult = sqlExecuteService.execute(problem.id(), sql);
-        if (!"OK".equals(userResult.message())) {
-            return new SubmitResult(false, userResult, emptySqlResult(), "SQL 실행 오류: " + userResult.message());
-        }
-
+    private SubmitResult validateSelect(Problem problem, SqlResult userResult) {
         Expected expected = problem.expected();
-        if (expected == null) {
-            return new SubmitResult(false, userResult, emptySqlResult(), "expected 정보가 없습니다.");
-        }
+        SqlResult expectedResult = new SqlResult(
+            expected.columns(),
+            expected.rows(),
+            "OK",
+            0);
 
-        // Build expected SqlResult for display
-        SqlResult expectedResult = new SqlResult(expected.columns(), expected.rows(), "OK", 0L);
+        List<String> expectedCols = expected.columns().stream()
+            .map(String::toUpperCase).toList();
+        List<String> actualCols = userResult.columns().stream()
+            .map(String::toUpperCase).toList();
 
-        // Compare columns (case-insensitive)
-        List<String> userCols = userResult.columns().stream().map(String::toLowerCase).toList();
-        List<String> expCols = expected.columns().stream().map(String::toLowerCase).toList();
-        if (!userCols.equals(expCols)) {
+        if (!expectedCols.equals(actualCols)) {
             return new SubmitResult(false, userResult, expectedResult,
                 "컬럼이 일치하지 않습니다. 기대: " + expected.columns() + ", 실제: " + userResult.columns());
         }
 
-        // Compare row count
-        if (userResult.rows().size() != expected.rows().size()) {
+        if (expected.rows().size() != userResult.rows().size()) {
             return new SubmitResult(false, userResult, expectedResult,
-                "행 수가 일치하지 않습니다. 기대: " + expected.rows().size() + "행, 실제: " + userResult.rows().size() + "행");
+                "행 수가 다릅니다. 기대: " + expected.rows().size() + "행, 실제: " + userResult.rows().size() + "행");
         }
 
-        // Compare row data
-        List<List<String>> userNorm = normalizeRows(userResult.rows());
-        List<List<String>> expNorm = normalizeRows(expected.rows());
+        List<List<String>> expectedRows = normalizeRows(expected.rows());
+        List<List<String>> actualRows = normalizeRows(userResult.rows());
 
-        boolean rowsMatch;
-        if (expected.orderMatters()) {
-            rowsMatch = userNorm.equals(expNorm);
-        } else {
-            rowsMatch = userNorm.size() == expNorm.size()
-                && userNorm.containsAll(expNorm)
-                && expNorm.containsAll(userNorm);
+        if (!expected.orderMatters()) {
+            expectedRows = new ArrayList<>(expectedRows);
+            actualRows = new ArrayList<>(actualRows);
+            Comparator<List<String>> rowComparator = (a, b) -> a.toString().compareTo(b.toString());
+            expectedRows.sort(rowComparator);
+            actualRows.sort(rowComparator);
         }
 
-        if (!rowsMatch) {
-            return new SubmitResult(false, userResult, expectedResult, "데이터가 일치하지 않습니다.");
+        if (!expectedRows.equals(actualRows)) {
+            return new SubmitResult(false, userResult, expectedResult,
+                "데이터가 일치하지 않습니다.");
         }
 
-        return new SubmitResult(true, userResult, expectedResult, "정답입니다!");
+        return new SubmitResult(true, userResult, expectedResult,
+            "정답입니다! (" + userResult.executionTime() + "ms)");
     }
 
-    private SubmitResult validateDdl(Problem problem, String sql) {
-        // Safety check
-        SqlResult blocked = SqlExecuteService.checkBlocked(sql);
-        if (blocked != null) {
-            return new SubmitResult(false, blocked, emptySqlResult(), "차단된 SQL입니다.");
-        }
-
-        // Re-init schema, then execute DDL
-        schemaService.initializeSchema(problem.id());
-        SqlResult ddlResult = sqlExecuteService.execute(problem.id(), sql);
-        if (!"OK".equals(ddlResult.message()) && !ddlResult.message().contains("행이 영향")) {
-            return new SubmitResult(false, ddlResult, emptySqlResult(), "DDL 실행 오류: " + ddlResult.message());
-        }
-
-        // Run validation query per profile
+    private SubmitResult validateDdl(Problem problem, SqlResult userResult, String sql) {
         Validation validation = problem.validation();
         if (validation == null) {
-            return new SubmitResult(false, ddlResult, emptySqlResult(), "validation 정보가 없습니다.");
+            return new SubmitResult(false, userResult, null, "DDL 검증 정보가 없습니다.");
         }
 
-        String[] activeProfiles = environment.getActiveProfiles();
-        String profile = activeProfiles.length > 0 ? activeProfiles[0] : "h2";
-        String checkQuery = validation.checkPerProfile() != null
-            ? validation.checkPerProfile().getOrDefault(profile, validation.checkPerProfile().get("h2"))
-            : null;
-
-        if (checkQuery == null) {
-            return new SubmitResult(false, ddlResult, emptySqlResult(), "프로파일에 맞는 검증 쿼리가 없습니다: " + profile);
+        String blocked = SqlExecuteService.checkBlocked(sql);
+        if (blocked != null) {
+            return new SubmitResult(false, userResult, null, "차단된 명령어입니다: " + blocked);
         }
 
-        SqlResult checkResult = sqlExecuteService.execute(problem.id(), checkQuery);
-        if (!"OK".equals(checkResult.message())) {
-            return new SubmitResult(false, checkResult, emptySqlResult(), "검증 쿼리 실행 오류: " + checkResult.message());
+        schemaService.initializeSchema(problem.id());
+        try {
+            jdbcTemplate.execute(sql);
+        } catch (Exception e) {
+            return new SubmitResult(false, userResult, null, "DDL 실행 오류: " + e.getMessage());
         }
 
-        // Validate expected value
-        if (!checkResult.rows().isEmpty() && !checkResult.rows().get(0).isEmpty()) {
-            Object val = checkResult.rows().get(0).get(0);
-            int actualValue = val instanceof Number n ? n.intValue() : Integer.parseInt(val.toString());
-            if (actualValue == validation.expectedValue()) {
-                return new SubmitResult(true, ddlResult, checkResult, "정답입니다!");
-            } else {
-                return new SubmitResult(false, ddlResult, checkResult,
-                    "검증 값이 일치하지 않습니다. 기대: " + validation.expectedValue() + ", 실제: " + actualValue);
-            }
+        String checkQuery = validation.checkPerProfile().getOrDefault(activeProfile,
+            validation.checkPerProfile().values().iterator().next());
+
+        Integer actualValue = jdbcTemplate.queryForObject(checkQuery, Integer.class);
+        if (actualValue != null && actualValue == validation.expectedValue()) {
+            return new SubmitResult(true, userResult, null,
+                "정답입니다! (" + userResult.executionTime() + "ms)");
         }
 
-        return new SubmitResult(false, ddlResult, emptySqlResult(), "검증 결과를 확인할 수 없습니다.");
+        return new SubmitResult(false, userResult, null, "DDL 검증 실패. 기대값: "
+            + validation.expectedValue() + ", 실제값: " + actualValue);
     }
 
     private List<List<String>> normalizeRows(List<List<Object>> rows) {
-        List<List<String>> result = new ArrayList<>();
-        for (List<Object> row : rows) {
-            List<String> normalized = new ArrayList<>();
-            for (Object cell : row) {
-                normalized.add(cell == null ? "null" : cell.toString());
-            }
-            result.add(normalized);
-        }
-        return result;
-    }
-
-    private SqlResult emptySqlResult() {
-        return new SqlResult(List.of(), List.of(), "", 0L);
+        return rows.stream()
+            .map(row -> row.stream()
+                .map(obj -> obj == null ? "null" : obj.toString())
+                .toList())
+            .toList();
     }
 }
