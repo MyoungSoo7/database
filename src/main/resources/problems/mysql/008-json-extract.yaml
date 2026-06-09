@@ -1,0 +1,29 @@
+id: "mysql-008"
+title: "JSON_EXTRACT — JSON 컬럼에서 값 꺼내기"
+category: "mysql"
+difficulty: 2
+description: |
+  `user_profile.info` 는 JSON 타입입니다. 각 사용자의 *이름*, *나이*, *도시* 를 보여주세요.
+  결과 컬럼: `name`, `age`, `city`. `id` 오름차순.
+
+  **JSON 값 추출 두 가지**:
+  - `JSON_EXTRACT(json_col, '$.path')` — 결과가 *JSON 표현* (문자열은 `"`로 감싸짐)
+  - `json_col->>'$.path'` — *언래핑* (문자열 그대로). `JSON_UNQUOTE(JSON_EXTRACT(...))` 와 동일
+  - `json_col->'$.path'` — JSON 표현 그대로 (= JSON_EXTRACT)
+
+  실무에서 *컬럼 추가 비용 큰 가변 속성* 을 JSON 으로 저장하는 패턴 흔함.
+  단점: 인덱스가 까다롭다 (*Generated Column 으로 인덱스*).
+
+  주의: PostgreSQL 의 `->`, `->>` 와 *연산자 이름은 같지만 의미가 약간 다름*.
+  MySQL 의 `->>` 는 *언래핑까지*, PostgreSQL 의 `->>` 도 같은 의미. *호환 우연*.
+type: SELECT
+schema: "008-schema.sql"
+expected:
+  columns: ["name", "age", "city"]
+  rows:
+    - ["김철수", 28, "서울"]
+    - ["이영희", 32, "부산"]
+    - ["박민수", 25, "서울"]
+    - ["정수연", 41, "대구"]
+  orderMatters: true
+hint: "SELECT name, CAST(info->>'$.age' AS UNSIGNED) AS age, info->>'$.city' AS city FROM user_profile ORDER BY id. age 를 정수로 비교받으려면 CAST 필수 (->> 는 텍스트 반환)."
