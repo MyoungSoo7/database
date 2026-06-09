@@ -1,0 +1,30 @@
+id: "mysql-003"
+title: "ROW_NUMBER OVER PARTITION BY — 부서별 급여 순위"
+category: "mysql"
+difficulty: 2
+description: |
+  `employees` 테이블의 각 직원에 대해 *부서 내 급여 높은 순으로 순위* 를 매기세요.
+  결과 컬럼은 `department`, `name`, `salary`, `rnk` 네 개입니다. `rnk` 는 1 부터 시작합니다.
+
+  **MySQL 8.0 / MariaDB 10.2+ 의 윈도우 함수**:
+  `ROW_NUMBER() OVER (PARTITION BY 그룹기준 ORDER BY 정렬기준 DESC)` 패턴.
+
+  - **ROW_NUMBER**: 동률에도 *고유* 순위 (1, 2, 3, 4...)
+  - **RANK**: 동률은 같은 순위, 다음 등수 *건너뛰기* (1, 2, 2, 4...)
+  - **DENSE_RANK**: 동률은 같은 순위, 다음 등수 *연속* (1, 2, 2, 3...)
+
+  이 문제에서는 *동률 가능성 없으므로* 세 함수 결과 동일하지만, 차이를 외워두세요.
+type: SELECT
+schema: "003-schema.sql"
+expected:
+  columns: ["department", "name", "salary", "rnk"]
+  rows:
+    - ["개발팀",   "박민수", 6200, 1]
+    - ["개발팀",   "한지원", 5800, 2]
+    - ["개발팀",   "김철수", 5500, 3]
+    - ["기획팀",   "정수연", 5100, 1]
+    - ["기획팀",   "이영희", 4800, 2]
+    - ["디자인팀", "강민호", 4700, 1]
+    - ["디자인팀", "최지훈", 4500, 2]
+  orderMatters: false
+hint: "SELECT department, name, salary, ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) AS rnk FROM employees"

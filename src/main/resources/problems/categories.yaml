@@ -11,3 +11,6 @@ categories:
   - id: ddl
     name: "DDL/제약조건"
     order: 4
+  - id: mysql
+    name: "MySQL/MariaDB 특화"
+    order: 5
