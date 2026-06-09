@@ -1,0 +1,27 @@
+id: "mysql-004"
+title: "LAG — 월별 매출의 전월 대비 차이"
+category: "mysql"
+difficulty: 2
+description: |
+  `monthly_sales` 테이블의 각 월에 대해 *전월 매출과의 차이* 를 같이 보여주세요.
+  결과 컬럼은 `year_month_str`, `revenue`, `prev_revenue`, `diff` 네 개입니다.
+  *2026-01 의 prev_revenue 와 diff 는 NULL*. 결과는 year_month_str 오름차순으로.
+
+  **MySQL 8.0 / MariaDB 10.2+ 윈도우 함수**:
+  - `LAG(컬럼, n)` — 같은 윈도우 내 *n 행 이전* 값
+  - `LEAD(컬럼, n)` — *n 행 다음* 값
+
+  실무에서 *시계열 데이터의 *증감 / 추세 분석* 에 가장 자주 쓰는 함수.
+  GROUP BY + self-join 으로 같은 효과 낼 수 있지만 *훨씬 느리고 복잡*. 윈도우 함수가 정공.
+type: SELECT
+schema: "004-schema.sql"
+expected:
+  columns: ["year_month_str", "revenue", "prev_revenue", "diff"]
+  rows:
+    - ["2026-01", 1200000, null, null]
+    - ["2026-02", 1500000, 1200000, 300000]
+    - ["2026-03", 1450000, 1500000, -50000]
+    - ["2026-04", 1800000, 1450000, 350000]
+    - ["2026-05", 2100000, 1800000, 300000]
+  orderMatters: true
+hint: "LAG(revenue) OVER (ORDER BY year_month_str) AS prev_revenue, revenue - LAG(revenue) OVER (ORDER BY year_month_str) AS diff"

@@ -1,0 +1,20 @@
+id: "mysql-001"
+title: "GROUP_CONCAT — 부서별 직원 이름 묶기"
+category: "mysql"
+difficulty: 1
+description: |
+  `employees` 테이블에서 *부서별로 소속 직원의 이름을 콤마(`,`) 로 연결* 해서 한 행으로 보여주세요.
+  결과 컬럼은 `department`, `members` 두 개입니다. `members` 안의 이름은 `id` 오름차순으로 정렬해주세요.
+
+  **MySQL/MariaDB 핵심 함수**: `GROUP_CONCAT(컬럼 ORDER BY ... SEPARATOR ',')`
+  PostgreSQL 의 `STRING_AGG` 와 같은 역할을 한다.
+type: SELECT
+schema: "001-schema.sql"
+expected:
+  columns: ["department", "members"]
+  rows:
+    - ["개발팀",   "김철수,박민수"]
+    - ["기획팀",   "이영희,정수연"]
+    - ["디자인팀", "최지훈"]
+  orderMatters: false
+hint: "GROUP_CONCAT(name ORDER BY id SEPARATOR ',') + GROUP BY department. 기본 SEPARATOR 는 ',' 이지만 명시하는 편이 안전."
