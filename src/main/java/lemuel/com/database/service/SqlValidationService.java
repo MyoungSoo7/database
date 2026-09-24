@@ -5,10 +5,12 @@ import lemuel.com.database.dto.SubmitResult;
 import lemuel.com.database.model.Expected;
 import lemuel.com.database.model.Problem;
 import lemuel.com.database.model.Validation;
-import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.JdbcUtils;
+import org.springframework.jdbc.support.MetaDataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.sql.DatabaseMetaData;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -21,19 +23,16 @@ public class SqlValidationService {
     private final ProblemService problemService;
     private final JdbcTemplate jdbcTemplate;
     private final SchemaService schemaService;
-    private final String activeProfile;
+    private volatile String dialect;
 
     public SqlValidationService(SqlExecuteService sqlExecuteService,
                                 ProblemService problemService,
                                 JdbcTemplate jdbcTemplate,
-                                SchemaService schemaService,
-                                Environment environment) {
+                                SchemaService schemaService) {
         this.sqlExecuteService = sqlExecuteService;
         this.problemService = problemService;
         this.jdbcTemplate = jdbcTemplate;
         this.schemaService = schemaService;
-        String[] profiles = environment.getActiveProfiles();
-        this.activeProfile = profiles.length > 0 ? profiles[0] : "h2";
     }
 
     public SubmitResult validate(String problemId, String sql) {
@@ -118,7 +117,7 @@ public class SqlValidationService {
             return new SubmitResult(false, userResult, null, "DDL 실행 오류: " + e.getMessage());
         }
 
-        String checkQuery = validation.checkPerProfile().getOrDefault(activeProfile,
+        String checkQuery = validation.checkPerProfile().getOrDefault(dialect(),
             validation.checkPerProfile().values().iterator().next());
 
         Integer actualValue = jdbcTemplate.queryForObject(checkQuery, Integer.class);
@@ -129,6 +128,36 @@ public class SqlValidationService {
 
         return new SubmitResult(false, userResult, null, "DDL 검증 실패. 기대값: "
             + validation.expectedValue() + ", 실제값: " + actualValue);
+    }
+
+    /**
+     * checkPerProfile 의 키(h2 / mysql / postgres)를 활성 프로필 이름이 아니라 실제 접속한 DB 로 고른다.
+     * 운영은 프로필이 "prod" 라 이름으로 찾으면 아무 키에도 안 걸리고 첫 번째 쿼리로 떨어졌다.
+     */
+    String dialect() {
+        String d = dialect;
+        if (d == null) {
+            d = detectDialect();
+            dialect = d;
+        }
+        return d;
+    }
+
+    private String detectDialect() {
+        try {
+            String product = JdbcUtils.extractDatabaseMetaData(jdbcTemplate.getDataSource(),
+                DatabaseMetaData::getDatabaseProductName);
+            return dialectOf(product);
+        } catch (MetaDataAccessException e) {
+            return "h2";
+        }
+    }
+
+    static String dialectOf(String productName) {
+        String p = productName == null ? "" : productName.toLowerCase();
+        if (p.contains("mysql") || p.contains("mariadb")) return "mysql";
+        if (p.contains("postgres")) return "postgres";
+        return "h2";
     }
 
     private List<List<String>> normalizeRows(List<List<Object>> rows) {
