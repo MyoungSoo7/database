@@ -58,6 +58,14 @@ public class SqlExecuteService {
         return (trimmed.startsWith("WITH") || trimmed.startsWith("EXPLAIN")) && !DML.matcher(sql).find();
     }
 
+    private static final Pattern INDEX_DDL =
+        Pattern.compile("(?is)^(CREATE\\s+(UNIQUE\\s+)?INDEX|DROP\\s+INDEX)\\b.*");
+
+    /** CREATE [UNIQUE] INDEX / DROP INDEX. 데이터는 안 바뀌어 스키마를 통째로 다시 만들 필요가 없다. */
+    static boolean isIndexDdl(String sql) {
+        return INDEX_DDL.matcher(stripLeadingComments(sql)).matches();
+    }
+
     static boolean isExplain(String sql) {
         String trimmed = stripLeadingComments(sql).toUpperCase();
         return trimmed.startsWith("EXPLAIN") || trimmed.startsWith("DESC");
@@ -154,7 +162,9 @@ public class SqlExecuteService {
         SqlResult last = null;
         for (int i = 0; i < statements.size(); i++) {
             String stmt = statements.get(i);
-            if (!isReadOnly(stmt)) {
+            if (isIndexDdl(stmt)) {
+                schemaService.markIndexChanged();
+            } else if (!isReadOnly(stmt)) {
                 schemaService.markDirty();
             }
             try {

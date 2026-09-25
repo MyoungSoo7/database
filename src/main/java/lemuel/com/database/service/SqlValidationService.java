@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 @Service
 public class SqlValidationService {
@@ -142,9 +141,6 @@ public class SqlValidationService {
             + validation.expectedValue() + ", 실제값: " + actualValue);
     }
 
-    private static final Pattern INDEX_DDL =
-        Pattern.compile("(?is)^(CREATE\\s+(UNIQUE\\s+)?INDEX|DROP\\s+INDEX)\\b.*");
-
     /**
      * 튜닝 문제. INDEX 는 인덱스 DDL 만 받아 초기 스키마에 적용한 뒤 target 쿼리를 채점하고,
      * REWRITE 는 제출한 SELECT 를 채점한다. 둘 다 결과가 정답과 같아야 하고 실행계획이 기준을 통과해야 한다.
@@ -169,13 +165,14 @@ public class SqlValidationService {
                 return new SubmitResult(false, null, null, "CREATE INDEX 문을 제출하세요.");
             }
             for (String stmt : statements) {
-                if (!INDEX_DDL.matcher(SqlExecuteService.stripLeadingComments(stmt)).matches()) {
+                if (!SqlExecuteService.isIndexDdl(stmt)) {
                     return new SubmitResult(false, null, null,
                         "인덱스 문제는 CREATE INDEX / DROP INDEX 만 제출할 수 있습니다: " + firstLine(stmt));
                 }
             }
-            schemaService.initializeSchema(problem.id());
-            schemaService.markDirty();
+            // 3만 행을 다시 넣지 않고, 초기에 없던 인덱스만 지운 뒤 제출한 인덱스를 얹는다.
+            schemaService.ensureSchema(problem.id());
+            schemaService.markIndexChanged();
             for (String stmt : statements) {
                 try {
                     jdbcTemplate.execute(stmt);

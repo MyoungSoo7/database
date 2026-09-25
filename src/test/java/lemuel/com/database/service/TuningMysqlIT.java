@@ -68,4 +68,25 @@ class TuningMysqlIT {
         SubmitResult r = validation.validate(id, sql);
         assertThat(r.correct()).as(r.feedback()).isFalse();
     }
+
+    /**
+     * 인덱스 제출은 스키마를 통째로 다시 만들지 않고 새로 생긴 인덱스만 지운다.
+     * 정답 인덱스가 남아 있으면 다음 사람의 쓸모없는 답이 통과하므로, 정답 → 오답 → 정답 순으로 번갈아 본다.
+     */
+    @ParameterizedTest
+    @MethodSource("tuningProblems")
+    void previousIndexDoesNotLeakIntoNextSubmission(String id) {
+        Problem p = problem(id);
+        if (!"INDEX".equals(p.tuning().mode())) {
+            return;
+        }
+        String useless = "CREATE INDEX idx_orders_amount ON orders (amount)";
+        assertThat(validation.validate(id, p.solution()).correct()).isTrue();
+        long t0 = System.nanoTime();
+        SubmitResult after = validation.validate(id, useless);
+        long ms = (System.nanoTime() - t0) / 1_000_000;
+        assertThat(after.correct()).as("정답 인덱스가 남았다: " + after.feedback()).isFalse();
+        assertThat(validation.validate(id, p.solution()).correct()).isTrue();
+        System.out.println("[index-reset] " + id + " 재제출 " + ms + "ms");
+    }
 }
