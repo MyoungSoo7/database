@@ -18,3 +18,8 @@ expected:
     - ["디자인팀", "최지훈"]
   orderMatters: false
 hint: "GROUP_CONCAT(name ORDER BY id SEPARATOR ',') + GROUP BY department. 기본 SEPARATOR 는 ',' 이지만 명시하는 편이 안전."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT department, GROUP_CONCAT(name ORDER BY id SEPARATOR ',') AS members
+  FROM employees
+  GROUP BY department

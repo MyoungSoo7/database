@@ -30,3 +30,10 @@ expected:
     - ["최지훈", "2026-06-04", -27]
   orderMatters: true
 hint: "SELECT customer, DATE_ADD(started_at, INTERVAL 30 DAY) AS expires_at, DATEDIFF(started_at, '2026-06-01') AS days_from_2026_06_01 FROM subscriptions ORDER BY id"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT customer,
+         DATE_ADD(started_at, INTERVAL 30 DAY) AS expires_at,
+         DATEDIFF(started_at, '2026-06-01') AS days_from_2026_06_01
+  FROM subscriptions
+  ORDER BY id

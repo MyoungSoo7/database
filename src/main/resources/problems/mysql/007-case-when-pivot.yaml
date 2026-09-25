@@ -25,3 +25,11 @@ expected:
     - ["디자인팀", 1, 1]
   orderMatters: true
 hint: "SELECT department, SUM(CASE WHEN salary >= 5000 THEN 1 ELSE 0 END) AS high_count, SUM(CASE WHEN salary < 5000 THEN 1 ELSE 0 END) AS low_count FROM employees GROUP BY department ORDER BY department"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT department,
+         SUM(CASE WHEN salary >= 5000 THEN 1 ELSE 0 END) AS high_count,
+         SUM(CASE WHEN salary < 5000 THEN 1 ELSE 0 END) AS low_count
+  FROM employees
+  GROUP BY department
+  ORDER BY department

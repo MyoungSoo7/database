@@ -36,8 +36,13 @@ class TuningMysqlIT {
         return new ProblemService().getProblemById(id).orElseThrow();
     }
 
+    /** 오늘의 풀이로 나가는 정답 예시가 실제로 정답인지. mysql 카테고리는 MySQL 에서만 돈다. */
+    static Stream<String> allProblems() {
+        return new ProblemService().getAllProblems().stream().map(Problem::id);
+    }
+
     @ParameterizedTest
-    @MethodSource("tuningProblems")
+    @MethodSource("allProblems")
     void solutionPasses(String id) {
         SubmitResult r = validation.validate(id, problem(id).solution());
         assertThat(r.correct()).as(r.feedback()).isTrue();
