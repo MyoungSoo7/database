@@ -1,0 +1,27 @@
+id: "mysql-007"
+title: "CASE WHEN — 조건부 집계로 피벗 흉내내기"
+category: "mysql"
+difficulty: 2
+description: |
+  부서별로 *5000 이상 급여를 받는 직원 수* 와 *5000 미만 직원 수* 를 한 행에 보여주세요.
+  결과 컬럼: `department`, `high_count`, `low_count`. `department` 오름차순.
+
+  **CASE WHEN + 집계** 패턴은 *SQL 의 피벗 (pivot)* 기본기.
+  - `SUM(CASE WHEN 조건 THEN 1 ELSE 0 END)` — 조건 만족 행 수
+  - `COUNT(CASE WHEN 조건 THEN 1 END)` — `NULL` 은 COUNT 가 무시하므로 같은 결과
+
+  실무에서 *대시보드 한 줄에 여러 지표* 를 묶을 때 거의 매번 등장.
+  GROUP BY + 별도 SELECT N 개로 풀려고 들지 말고 *한 GROUP BY 에 CASE 집계 N 개* 가 정공.
+
+  MySQL/MariaDB 에 `PIVOT` 구문 *자체가 없다*. CASE WHEN 으로 풀어야 한다.
+  Oracle / SQL Server 의 `PIVOT` 절을 흉내내는 표준 기법.
+type: SELECT
+schema: "007-schema.sql"
+expected:
+  columns: ["department", "high_count", "low_count"]
+  rows:
+    - ["개발팀",   2, 1]
+    - ["기획팀",   1, 2]
+    - ["디자인팀", 1, 1]
+  orderMatters: true
+hint: "SELECT department, SUM(CASE WHEN salary >= 5000 THEN 1 ELSE 0 END) AS high_count, SUM(CASE WHEN salary < 5000 THEN 1 ELSE 0 END) AS low_count FROM employees GROUP BY department ORDER BY department"

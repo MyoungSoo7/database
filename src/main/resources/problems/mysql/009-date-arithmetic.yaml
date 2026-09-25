@@ -1,0 +1,32 @@
+id: "mysql-009"
+title: "DATE_ADD / DATEDIFF — 만료일과 누적 일수 계산"
+category: "mysql"
+difficulty: 2
+description: |
+  `subscriptions` 에서 각 구독에 대해 *시작일 기준 30 일 후의 만료일* 과
+  *시작일이 '2026-06-01' 로부터 며칠 전·후인지* 를 함께 보여주세요.
+  결과 컬럼: `customer`, `expires_at`, `days_from_2026_06_01`. `id` 오름차순.
+
+  - `expires_at` = `started_at` + 30일 → `DATE` 타입
+  - `days_from_2026_06_01` = `started_at - '2026-06-01'` 일수 차이 → 음수면 *그만큼 전*
+
+  **MySQL/MariaDB 핵심 날짜 함수**:
+  - `DATE_ADD(date, INTERVAL N DAY)` / `DATE_SUB(date, INTERVAL N DAY)` — 가감
+  - `DATEDIFF(d1, d2)` — *d1 - d2* 의 일수 (정수)
+  - `TIMESTAMPDIFF(unit, d1, d2)` — *d2 - d1* 의 *임의 unit (SECOND/MINUTE/HOUR/DAY/MONTH/YEAR)*
+  - `NOW()` / `CURDATE()` / `CURRENT_DATE` — 현재
+
+  주의: `DATEDIFF` 의 *인자 순서* 가 MySQL 과 SQL Server 가 *반대*. MySQL: `DATEDIFF(end, start)`.
+  PostgreSQL 은 `DATEDIFF` *없음* — `(end - start)` 가 INTERVAL 반환.
+type: SELECT
+schema: "009-schema.sql"
+expected:
+  columns: ["customer", "expires_at", "days_from_2026_06_01"]
+  rows:
+    - ["김철수", "2026-02-14", -137]
+    - ["이영희", "2025-12-31", -182]
+    - ["박민수", "2026-04-09", -83]
+    - ["정수연", "2024-09-19", -650]
+    - ["최지훈", "2026-06-04", -27]
+  orderMatters: true
+hint: "SELECT customer, DATE_ADD(started_at, INTERVAL 30 DAY) AS expires_at, DATEDIFF(started_at, '2026-06-01') AS days_from_2026_06_01 FROM subscriptions ORDER BY id"

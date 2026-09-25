@@ -1,0 +1,29 @@
+id: "mysql-006"
+title: "IFNULL / COALESCE — NULL 안전 처리"
+category: "mysql"
+difficulty: 1
+description: |
+  `employees` 의 모든 행을 *NULL 을 기본값으로 치환* 해서 보여주세요.
+  - `department` 가 NULL 이면 `'미배정'`
+  - `bonus` 가 NULL 이면 `0`
+
+  결과 컬럼: `name`, `department`, `bonus`. `id` 오름차순.
+
+  **두 함수 모두 같은 결과**:
+  - `IFNULL(expr, default)` — MySQL/MariaDB 만의 *2 인자* 함수
+  - `COALESCE(expr1, expr2, ...)` — 표준 SQL, *N 개 인자 중 첫 non-NULL*
+
+  실무 추천: *코드 이식성* 때문에 `COALESCE` 가 정공. `IFNULL` 은 MySQL/MariaDB *외*에서 안 통한다.
+  Oracle 의 `NVL`, PostgreSQL 의 `COALESCE` 와 모두 호환되는 것이 `COALESCE`.
+type: SELECT
+schema: "006-schema.sql"
+expected:
+  columns: ["name", "department", "bonus"]
+  rows:
+    - ["김철수", "개발팀", 500]
+    - ["이영희", "기획팀", 0]
+    - ["박민수", "미배정", 800]
+    - ["정수연", "기획팀", 0]
+    - ["최지훈", "미배정", 0]
+  orderMatters: true
+hint: "SELECT name, COALESCE(department, '미배정') AS department, COALESCE(bonus, 0) AS bonus FROM employees ORDER BY id"
