@@ -1,0 +1,37 @@
+id: "window-012"
+title: "도시별 배달 시간 중앙값 — ROW_NUMBER + COUNT OVER"
+category: "window"
+difficulty: 3
+description: |
+  `delivery_times` 의 도시(`city`)별 배달 소요 시간(`minutes`) **중앙값**을 구하세요. MySQL 에는 MEDIAN 함수가 없습니다.
+
+  - 중앙값: 값을 오름차순으로 늘어놓았을 때 가운데 값. 개수가 **짝수**면 가운데 두 값의 평균.
+  - 같은 값이 여러 개 있어도 각각 한 개로 셉니다 (중복 제거 없음).
+  - `median_minutes` 는 `ROUND(값, 1)`.
+
+  결과 컬럼은 `city`, `order_count`(그 도시의 배달 건수), `median_minutes` 세 개입니다. 정렬은 채점하지 않습니다.
+type: SELECT
+schema: "adv-schema.sql"
+expected:
+  columns: ["city", "order_count", "median_minutes"]
+  rows:
+    - ["광주", 2, "29.5"]
+    - ["대구", 3, "29.0"]
+    - ["부산", 4, "36.5"]
+    - ["서울", 5, "30.0"]
+  orderMatters: false
+hint: "도시별 ROW_NUMBER() (minutes 순) 과 COUNT(*) OVER (PARTITION BY city) 를 붙인 뒤, 순번이 FLOOR((n+1)/2) 또는 CEIL((n+1)/2) 인 행만 남겨 AVG 합니다. 홀수면 두 식이 같은 행을 가리킵니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  WITH r AS (
+      SELECT city, minutes,
+             ROW_NUMBER() OVER (PARTITION BY city ORDER BY minutes, id) AS rn,
+             COUNT(*) OVER (PARTITION BY city) AS cnt
+      FROM delivery_times
+  )
+  SELECT city,
+         cnt AS order_count,
+         ROUND(AVG(minutes), 1) AS median_minutes
+  FROM r
+  WHERE rn IN (FLOOR((cnt + 1) / 2), CEIL((cnt + 1) / 2))
+  GROUP BY city, cnt

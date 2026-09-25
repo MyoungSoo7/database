@@ -1,0 +1,40 @@
+id: "tuning-008"
+title: "IN + ORDER BY LIMIT — 갈래마다 인덱스 순서로 읽고 합치기"
+category: "tuning"
+difficulty: 3
+description: |
+  가족 계정으로 묶인 두 고객(777, 212)의 **주문을 합쳐 최신 5건**을 보여주려 합니다.
+  `orders` 에는 `idx_orders_customer_created (customer_id, created_at)` 가 있습니다.
+
+  고객이 하나(`customer_id = 777`)면 이 인덱스가 이미 최신순으로 정렬돼 있어서 5건만 읽고 멈춥니다 (tuning-004).
+  그런데 대상 쿼리처럼 `customer_id IN (777, 212)` 로 두 고객을 한꺼번에 찾으면, 두 고객의 주문이 인덱스에서
+  서로 다른 구간에 있어 **하나로 이어진 정렬 순서가 없습니다.** 그래서 두 고객의 주문을 전부 읽은 뒤
+  따로 정렬합니다 (`Using filesort`). 고객당 주문이 수만 건이면 5 건을 위해 수만 건을 정렬합니다.
+  `OR` 로 써도 같습니다.
+
+  **쿼리를 고쳐서** `orders` 를 읽는 모든 단계에서 filesort 가 없게 하세요. 결과(컬럼·행·순서)는 대상 쿼리와 같아야 합니다.
+  요령: 고객 한 명씩은 인덱스 순서로 읽을 수 있습니다. 갈래마다 최신 5건씩만 뽑아 합친 뒤(최대 10 건) 마지막에 한 번 더 고르세요.
+
+  참고: 합친 결과(파생 테이블 `<derivedN>`)를 정렬하는 filesort 는 10 행짜리라 채점에서 보지 않습니다.
+  `created_at` 은 결과에 넣지 않지만 정렬·합치기에 필요하면 안쪽 SELECT 에 넣어도 됩니다.
+
+  채점 기준: 결과 일치, `orders` 를 읽는 모든 행에서 filesort·풀스캔·인덱스 풀스캔 금지, 예상 rows 50 이하.
+type: TUNING
+schema: "008-schema.sql"
+target: "SELECT id, customer_id, amount FROM orders WHERE customer_id IN (777, 212) ORDER BY created_at DESC, id DESC LIMIT 5"
+tuning:
+  mode: REWRITE
+  table: orders
+  maxRows: 50
+  forbid: [FULL_SCAN, FULL_INDEX_SCAN, FILESORT]
+expected:
+  columns: ["id", "customer_id", "amount"]
+  rows:
+    - [28904, 777, 16900]
+    - [26904, 777, 49400]
+    - [24904, 777, 81900]
+    - [28269, 212, 45800]
+    - [22904, 777, 15300]
+  orderMatters: true
+hint: "SELECT ... FROM ((SELECT ..., created_at FROM orders WHERE customer_id = 777 ORDER BY created_at DESC, id DESC LIMIT 5) UNION ALL (같은 것을 212 로)) t ORDER BY created_at DESC, id DESC LIMIT 5"
+solution: "SELECT id, customer_id, amount FROM ((SELECT id, customer_id, amount, created_at FROM orders WHERE customer_id = 777 ORDER BY created_at DESC, id DESC LIMIT 5) UNION ALL (SELECT id, customer_id, amount, created_at FROM orders WHERE customer_id = 212 ORDER BY created_at DESC, id DESC LIMIT 5)) t ORDER BY created_at DESC, id DESC LIMIT 5"

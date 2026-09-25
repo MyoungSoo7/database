@@ -1,0 +1,29 @@
+id: "dml-011"
+title: "중복 행 정리 — 이메일마다 가장 먼저 가입한 한 건만 남기기"
+category: "dml"
+difficulty: 3
+description: |
+  `newsletter_subs` 는 뉴스레터 구독 명단입니다. 가입 버튼을 여러 번 눌러서 **같은 `email` 이 여러 행** 들어가 있습니다.
+  이메일마다 **`id` 가 가장 작은 행 하나만 남기고** 나머지 중복 행을 모두 삭제하세요.
+
+  - 중복 여부는 `email` 만으로 판단합니다. `name` 이나 `subscribed_on` 이 달라도 이메일이 같으면 중복입니다.
+  - 중복이 없는 이메일의 행은 그대로 남습니다. 남는 행의 값은 바뀌면 안 됩니다.
+  - 같은 스키마의 `sales_reps` 는 그대로 두어야 합니다.
+
+  함정: MySQL 은 `DELETE FROM t WHERE id NOT IN (SELECT MIN(id) FROM t GROUP BY email)` 처럼
+  **지우는 테이블을 같은 문장의 서브쿼리에서 다시 읽으면** `ERROR 1093 (You can't specify target table ... for update in FROM clause)` 로 거부합니다.
+  이 제한을 피하는 방법을 찾아 한 문장으로 끝내세요.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 데이터에 제출한 문장을 실행한 뒤 테이블 상태를 확인합니다.
+  바꾸라고 한 것 말고는 아무것도 바뀌면 안 되고, 문자열 값은 대소문자까지 정확히 맞아야 합니다.
+type: DDL
+schema: "adv-schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN CAST((SELECT GROUP_CONCAT(CONCAT_WS(':',id,email,name,subscribed_on) ORDER BY id SEPARATOR ',') FROM newsletter_subs) AS BINARY) = CAST('1:minjun@mail.com:김민준:2025-01-03,2:seoyeon@mail.com:이서연:2025-01-04,4:doyun@mail.com:박도윤:2025-01-12,6:jiwoo@mail.com:최지우:2025-01-20,8:hajun@mail.com:정하준:2025-02-03,10:seoyun@mail.com:강서윤:2025-02-14,12:yejun@mail.com:조예준:2025-03-01' AS BINARY) AND (SELECT COUNT(*) FROM sales_reps) = 13 AND (SELECT SUM(bonus) FROM sales_reps) = 200000 THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "자기 자신과 JOIN 하는 다중 테이블 DELETE — DELETE s1 FROM t s1 JOIN t s2 ON s1.email = s2.email AND s1.id > s2.id. 또는 서브쿼리를 파생 테이블로 한 번 더 감싸 먼저 구체화(materialize)시키세요: WHERE id NOT IN (SELECT id FROM (SELECT MIN(id) AS id ... GROUP BY email) AS keep)."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  DELETE s1 FROM newsletter_subs s1 JOIN newsletter_subs s2 ON s1.email = s2.email AND s1.id > s2.id

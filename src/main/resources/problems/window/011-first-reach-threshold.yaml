@@ -1,0 +1,45 @@
+id: "window-011"
+title: "포인트 잔액이 처음 1만 점에 닿은 날 — 누적 합 + 첫 행 고르기"
+category: "window"
+difficulty: 3
+description: |
+  `point_ledger` 는 회원(`member`)별 포인트 원장입니다. `amount` 가 양수면 적립, 음수면 사용이며
+  잔액은 그 회원의 거래를 `txn_date` 순(같은 날이면 `id` 순)으로 누적한 합입니다.
+
+  회원별로 **잔액이 처음으로 10000 이상이 된 거래**의 날짜와 그 시점의 잔액을 구하세요.
+  - 이후에 잔액이 다시 10000 아래로 내려가도 "처음" 기준이므로 상관없습니다.
+  - 한 번도 10000 에 닿지 못한 회원도 결과에 포함하고, `reached_date`·`balance_at_reach` 를 NULL 로 둡니다.
+
+  결과 컬럼은 `member`, `reached_date`(DATE), `balance_at_reach` 세 개입니다. 정렬은 채점하지 않습니다.
+type: SELECT
+schema: "adv-schema.sql"
+expected:
+  columns: ["member", "reached_date", "balance_at_reach"]
+  rows:
+    - ["민지", "2025-01-20", "10000"]
+    - ["준호", "2025-01-05", "12000"]
+    - ["서윤", null, null]
+    - ["도현", "2025-01-11", "10000"]
+  orderMatters: false
+hint: "SUM(amount) OVER (PARTITION BY member ORDER BY txn_date, id) 로 잔액을 만들고, 잔액 >= 10000 인 행 중 회원별 첫 행을 고른 뒤, 전체 회원 목록에 LEFT JOIN 합니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  WITH r AS (
+      SELECT member, txn_date,
+             SUM(amount) OVER (PARTITION BY member ORDER BY txn_date, id) AS balance
+      FROM point_ledger
+  ),
+  h AS (
+      SELECT member, txn_date, balance,
+             ROW_NUMBER() OVER (PARTITION BY member ORDER BY txn_date) AS rn
+      FROM r
+      WHERE balance >= 10000
+  ),
+  m AS (
+      SELECT DISTINCT member FROM point_ledger
+  )
+  SELECT m.member,
+         h.txn_date AS reached_date,
+         h.balance AS balance_at_reach
+  FROM m
+  LEFT JOIN h ON h.member = m.member AND h.rn = 1
