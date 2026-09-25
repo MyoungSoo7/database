@@ -28,3 +28,8 @@ expected:
     - ["디자인팀", "최지훈", 4500, 2]
   orderMatters: false
 hint: "SELECT department, name, salary, ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) AS rnk FROM employees"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT department, name, salary,
+         ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary DESC) AS rnk
+  FROM employees

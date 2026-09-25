@@ -34,3 +34,10 @@ expected:
     - ["B", "오세나", 70, 4, 3]
   orderMatters: true
 hint: "SELECT class_name, name, score, RANK() OVER (PARTITION BY class_name ORDER BY score DESC) AS rk, DENSE_RANK() OVER (PARTITION BY class_name ORDER BY score DESC) AS dense_rk FROM students ORDER BY class_name, score DESC, id"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT class_name, name, score,
+         RANK() OVER (PARTITION BY class_name ORDER BY score DESC) AS rk,
+         DENSE_RANK() OVER (PARTITION BY class_name ORDER BY score DESC) AS dense_rk
+  FROM students
+  ORDER BY class_name, score DESC, id

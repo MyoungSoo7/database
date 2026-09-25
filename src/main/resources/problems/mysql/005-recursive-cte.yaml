@@ -35,3 +35,11 @@ expected:
     - [8, "플랫폼 그룹",  2]
   orderMatters: true
 hint: "WITH RECURSIVE sub AS (SELECT id, name, 0 AS depth FROM departments WHERE id = 2 UNION ALL SELECT d.id, d.name, s.depth + 1 FROM departments d JOIN sub s ON d.parent_id = s.id) SELECT * FROM sub ORDER BY depth, id"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  WITH RECURSIVE sub AS (
+      SELECT id, name, 0 AS depth FROM departments WHERE id = 2
+      UNION ALL
+      SELECT d.id, d.name, s.depth + 1 FROM departments d JOIN sub s ON d.parent_id = s.id
+  )
+  SELECT id, name, depth FROM sub ORDER BY depth, id
