@@ -44,6 +44,21 @@ public class ProblemController {
         String schemaContent = problemService.getSchemaContent(id);
         model.addAttribute("problem", problem);
         model.addAttribute("schemaContent", schemaContent);
+        model.addAttribute("initialSql", initialSql(problem));
         return "problem-detail";
+    }
+
+    /** 튜닝 문제는 대상 쿼리를 미리 넣어 둔다. 인덱스 문제는 만들고 바로 EXPLAIN 까지 한 번에 돌리는 틀. */
+    static String initialSql(Problem problem) {
+        if (problem.target() == null) {
+            return "SELECT ";
+        }
+        if (problem.tuning() != null && "REWRITE".equals(problem.tuning().mode())) {
+            return problem.target();
+        }
+        String table = problem.tuning() != null ? problem.tuning().table() : "orders";
+        return "-- 실행: 인덱스를 만든 상태의 실행계획을 봅니다. 제출: CREATE INDEX 만 적용되고 EXPLAIN 은 무시됩니다.\n"
+            + "CREATE INDEX idx_ ON " + table + " ();\n"
+            + "EXPLAIN " + problem.target();
     }
 }

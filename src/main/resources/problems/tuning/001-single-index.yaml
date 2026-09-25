@@ -1,0 +1,35 @@
+id: "tuning-001"
+title: "단일 인덱스 — 풀스캔 없애기"
+category: "tuning"
+difficulty: 1
+description: |
+  `orders` 에는 주문 30,000 건이 있고 인덱스는 PK(`id`) 하나뿐입니다.
+  아래 *튜닝 대상 쿼리* 는 고객 한 명의 주문 15 건을 찾으려고 30,000 행을 전부 읽습니다.
+
+  **인덱스를 만들어서** 이 쿼리가 풀스캔하지 않게 하세요. 제출은 `CREATE INDEX` 문입니다.
+  채점은 제출한 인덱스를 만든 뒤 대상 쿼리를 돌려 *결과가 같은지*, `EXPLAIN` 이 기준을 넘는지 봅니다.
+
+  **EXPLAIN 읽는 법** (MySQL):
+  - `type` — `ALL` 은 풀스캔. `ref`·`range`·`const` 로 내려가면 인덱스를 탄 것
+  - `key` — 실제로 고른 인덱스 (`NULL` 이면 안 씀)
+  - `rows` — 옵티마이저가 *읽을 거라고 예상한* 행 수
+
+  실행 버튼으로 여러 문장을 한 번에 돌릴 수 있습니다. 예:
+  `CREATE INDEX ...; EXPLAIN SELECT ...` → 인덱스를 만든 상태의 실행계획이 보입니다.
+
+  채점 기준: 풀스캔(type=ALL) 금지, 예상 rows 100 이하.
+type: TUNING
+schema: "001-schema.sql"
+target: "SELECT COUNT(*) AS cnt, SUM(amount) AS total FROM orders WHERE customer_id = 777"
+tuning:
+  mode: INDEX
+  table: orders
+  maxRows: 100
+  forbid: [FULL_SCAN]
+expected:
+  columns: ["cnt", "total"]
+  rows:
+    - [15, 693000]
+  orderMatters: false
+hint: "WHERE 절에서 등호로 거르는 컬럼에 인덱스를 거세요. CREATE INDEX idx_orders_customer ON orders (customer_id)"
+solution: "CREATE INDEX idx_orders_customer ON orders (customer_id)"

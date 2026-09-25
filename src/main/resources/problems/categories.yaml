@@ -14,3 +14,6 @@ categories:
   - id: mysql
     name: "MySQL/MariaDB 특화"
     order: 5
+  - id: tuning
+    name: "쿼리 튜닝 (실행계획·인덱스)"
+    order: 6

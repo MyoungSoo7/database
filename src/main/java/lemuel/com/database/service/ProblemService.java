@@ -3,6 +3,7 @@ package lemuel.com.database.service;
 import lemuel.com.database.model.Category;
 import lemuel.com.database.model.Expected;
 import lemuel.com.database.model.Problem;
+import lemuel.com.database.model.Tuning;
 import lemuel.com.database.model.Validation;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -108,7 +109,22 @@ public class ProblemService {
             validation = new Validation(valType, checkPerProfile, expectedValue);
         }
 
-        return new Problem(id, title, category, difficulty, description, type, schema, expected, validation, hint);
+        Tuning tuning = null;
+        if (data.containsKey("tuning")) {
+            Map<String, Object> t = (Map<String, Object>) data.get("tuning");
+            tuning = new Tuning(
+                (String) t.getOrDefault("mode", "INDEX"),
+                (String) t.get("table"),
+                (Integer) t.getOrDefault("maxRows", 0),
+                (List<String>) t.getOrDefault("forbid", List.of()),
+                (List<String>) t.getOrDefault("require", List.of()),
+                (String) t.get("requireKey"));
+        }
+        String target = (String) data.get("target");
+        String solution = (String) data.get("solution");
+
+        return new Problem(id, title, category, difficulty, description, type, schema, expected, validation, hint,
+            target, tuning, solution);
     }
 
     public List<Category> getCategories() {
