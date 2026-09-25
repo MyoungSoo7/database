@@ -1,7 +1,7 @@
 id: "tuning-004"
 title: "ORDER BY + LIMIT — filesort 없애기"
 category: "tuning"
-difficulty: 3
+difficulty: 2
 description: |
   "고객의 최근 주문 5건" 은 어느 서비스에나 있는 쿼리입니다.
   `idx_orders_customer (customer_id)` 로 고객의 주문은 빨리 찾지만, `created_at` 순서는 인덱스에 없어서
