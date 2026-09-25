@@ -111,6 +111,7 @@ public class SqlValidationService {
         }
 
         schemaService.initializeSchema(problem.id());
+        schemaService.markDirty();
         try {
             jdbcTemplate.execute(sql);
         } catch (Exception e) {

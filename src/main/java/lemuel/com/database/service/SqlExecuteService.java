@@ -43,20 +43,39 @@ public class SqlExecuteService {
         return null;
     }
 
+    private static final Pattern DML = Pattern.compile("(?i)\\b(INSERT|UPDATE|DELETE|REPLACE)\\b");
+
+    /**
+     * 스키마를 바꾸지 않는 문인가. 아니면 다음 실행 전에 schema.sql 을 다시 돌린다.
+     * MySQL 8 은 WITH ... UPDATE/DELETE 가 되므로 WITH 는 DML 키워드가 없을 때만 읽기로 본다.
+     * SELECT ... FOR UPDATE 는 잠금만 걸고 데이터는 안 바꾼다.
+     */
+    static boolean isReadOnly(String sql) {
+        String trimmed = sql.trim().toUpperCase();
+        if (trimmed.startsWith("SELECT") || trimmed.startsWith("SHOW")) {
+            return true;
+        }
+        return trimmed.startsWith("WITH") && !DML.matcher(sql).find();
+    }
+
     public SqlResult execute(String problemId, String sql) {
         String blocked = checkBlocked(sql);
         if (blocked != null) {
             return new SqlResult(List.of(), List.of(), "차단된 명령어입니다: " + blocked, 0);
         }
 
-        schemaService.initializeSchema(problemId);
+        schemaService.ensureSchema(problemId);
 
         long start = System.currentTimeMillis();
         try {
             String trimmed = sql.trim().toUpperCase();
             if (trimmed.startsWith("SELECT") || trimmed.startsWith("WITH") || trimmed.startsWith("SHOW")) {
+                if (!isReadOnly(sql)) {
+                    schemaService.markDirty();
+                }
                 return executeQuery(sql, start);
             } else {
+                schemaService.markDirty();
                 return executeUpdate(sql, start);
             }
         } catch (Exception e) {
