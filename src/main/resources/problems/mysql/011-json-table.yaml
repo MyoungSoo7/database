@@ -1,0 +1,45 @@
+id: "mysql-011"
+title: "JSON_TABLE — JSON 배열 주문 항목을 행으로 펼쳐 집계"
+category: "mysql"
+difficulty: 3
+description: |
+  `cart_orders.items` 는 한 주문의 상품 목록을 담은 JSON 배열입니다.
+  배열의 각 원소는 `{"sku": 상품코드, "qty": 수량, "price": 그 주문에서의 단가}` 모양입니다 (같은 상품도 주문마다 단가가 다를 수 있음).
+
+  **결제 완료(`status = 'PAID'`) 주문만** 대상으로, 상품(`sku`)별로 다음을 구하세요.
+  - `total_qty`: 수량 합계
+  - `revenue`: 각 항목의 `qty * price` 합계
+  - `order_count`: 그 상품이 들어 있는 주문 수 (서로 다른 주문 id 수)
+
+  항목이 빈 배열(`[]`)인 주문은 아무 행도 만들지 않습니다.
+  결과 컬럼은 `sku`, `total_qty`, `revenue`, `order_count` 네 개입니다.
+  결과는 `revenue` 내림차순, 같으면 `sku` 오름차순이며 **정렬도 채점합니다**.
+
+  MySQL 8.0 의 `JSON_TABLE(json, '$[*]' COLUMNS (...))` 은 JSON 배열을 **가상의 테이블**로 펼쳐 주므로,
+  `FROM cart_orders o, JSON_TABLE(o.items, ...) AS jt` 처럼 원래 행과 옆으로 조인해 쓸 수 있습니다.
+type: SELECT
+schema: "adv-schema.sql"
+expected:
+  columns: ["sku", "total_qty", "revenue", "order_count"]
+  rows:
+    - ["BAG", "1", "45000", 1]
+    - ["MUG", "3", "34000", 2]
+    - ["NOTE", "8", "24000", 3]
+    - ["PEN", "8", "11600", 3]
+  orderMatters: true
+hint: "JSON_TABLE(o.items, '$[*]' COLUMNS (sku VARCHAR(20) PATH '$.sku', qty INT PATH '$.qty', price INT PATH '$.price')) AS jt — 그다음은 평범한 GROUP BY 입니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT jt.sku,
+         SUM(jt.qty) AS total_qty,
+         SUM(jt.qty * jt.price) AS revenue,
+         COUNT(DISTINCT o.id) AS order_count
+  FROM cart_orders o,
+       JSON_TABLE(o.items, '$[*]' COLUMNS (
+           sku   VARCHAR(20) PATH '$.sku',
+           qty   INT         PATH '$.qty',
+           price INT         PATH '$.price'
+       )) AS jt
+  WHERE o.status = 'PAID'
+  GROUP BY jt.sku
+  ORDER BY revenue DESC, jt.sku
