@@ -1,0 +1,39 @@
+id: "tuning-004"
+title: "ORDER BY + LIMIT — filesort 없애기"
+category: "tuning"
+difficulty: 3
+description: |
+  "고객의 최근 주문 5건" 은 어느 서비스에나 있는 쿼리입니다.
+  `idx_orders_customer (customer_id)` 로 고객의 주문은 빨리 찾지만, `created_at` 순서는 인덱스에 없어서
+  찾은 행을 **따로 정렬합니다** — `EXPLAIN` 의 `Extra` 에 `Using filesort`.
+
+  지금은 고객당 15건이라 티가 안 나지만, 주문이 수만 건인 고객이면 LIMIT 5 를 위해
+  수만 건을 정렬합니다. 인덱스가 이미 정렬된 순서로 읽히게 하면 **5건만 읽고 멈춥니다.**
+
+  **인덱스를 만들어 filesort 를 없애세요.**
+  힌트: `WHERE` 의 등호 컬럼 다음에 `ORDER BY` 컬럼. `DESC` 정렬도 MySQL 8 은 인덱스를 거꾸로
+  읽어서 처리합니다 (`Backward index scan`).
+
+  함정: `created_at` 하나에만 인덱스를 걸면 정렬은 없어지지만 모든 고객의 주문을 최신순으로 훑으며
+  777 번을 찾게 됩니다 (type=index). 그것도 불합격입니다.
+
+  채점 기준: filesort·풀스캔·인덱스 풀스캔 금지, 예상 rows 100 이하.
+type: TUNING
+schema: "004-schema.sql"
+target: "SELECT id, amount FROM orders WHERE customer_id = 777 ORDER BY created_at DESC LIMIT 5"
+tuning:
+  mode: INDEX
+  table: orders
+  maxRows: 100
+  forbid: [FULL_SCAN, FULL_INDEX_SCAN, FILESORT]
+expected:
+  columns: ["id", "amount"]
+  rows:
+    - [28904, 16900]
+    - [26904, 49400]
+    - [24904, 81900]
+    - [22904, 15300]
+    - [20904, 47800]
+  orderMatters: true
+hint: "CREATE INDEX idx_orders_customer_created ON orders (customer_id, created_at)"
+solution: "CREATE INDEX idx_orders_customer_created ON orders (customer_id, created_at)"

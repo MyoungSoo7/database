@@ -4,6 +4,7 @@ import lemuel.com.database.dto.SqlResult;
 import lemuel.com.database.dto.SubmitResult;
 import lemuel.com.database.model.Expected;
 import lemuel.com.database.model.Problem;
+import lemuel.com.database.model.Tuning;
 import lemuel.com.database.model.Validation;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.JdbcUtils;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 public class SqlValidationService {
@@ -42,6 +44,15 @@ public class SqlValidationService {
         }
 
         Problem problem = problemOpt.get();
+
+        if ("TUNING".equals(problem.type())) {
+            return validateTuning(problem, sql);
+        }
+
+        // 여러 문장을 허용하면 DELETE 로 데이터를 정답 모양으로 깎은 뒤 SELECT * 로 맞힐 수 있다.
+        if (SqlExecuteService.splitStatements(sql).size() > 1) {
+            return new SubmitResult(false, null, null, "제출은 SQL 한 문장만 됩니다. (실행 버튼은 여러 문장 가능)");
+        }
 
         SqlResult userResult = sqlExecuteService.execute(problemId, sql);
 
@@ -129,6 +140,90 @@ public class SqlValidationService {
 
         return new SubmitResult(false, userResult, null, "DDL 검증 실패. 기대값: "
             + validation.expectedValue() + ", 실제값: " + actualValue);
+    }
+
+    private static final Pattern INDEX_DDL =
+        Pattern.compile("(?is)^(CREATE\\s+(UNIQUE\\s+)?INDEX|DROP\\s+INDEX)\\b.*");
+
+    /**
+     * 튜닝 문제. INDEX 는 인덱스 DDL 만 받아 초기 스키마에 적용한 뒤 target 쿼리를 채점하고,
+     * REWRITE 는 제출한 SELECT 를 채점한다. 둘 다 결과가 정답과 같아야 하고 실행계획이 기준을 통과해야 한다.
+     * 테이블을 다시 만들 수 있으면 정답 행만 담은 작은 테이블로 rows 기준을 속일 수 있어 DDL 종류를 좁힌다.
+     */
+    private SubmitResult validateTuning(Problem problem, String sql) {
+        Tuning tuning = problem.tuning();
+        if (tuning == null) {
+            return new SubmitResult(false, null, null, "튜닝 채점 정보가 없습니다.");
+        }
+        String blocked = SqlExecuteService.checkBlocked(sql);
+        if (blocked != null) {
+            return new SubmitResult(false, null, null, "차단된 명령어입니다: " + blocked);
+        }
+        List<String> statements = SqlExecuteService.splitStatements(sql);
+
+        String query;
+        if ("INDEX".equals(tuning.mode())) {
+            // 실행 버튼용으로 같이 적어 둔 EXPLAIN·SELECT 는 무시한다 (읽기만 하니 채점에 영향이 없다).
+            statements = statements.stream().filter(st -> !SqlExecuteService.isReadOnly(st)).toList();
+            if (statements.isEmpty()) {
+                return new SubmitResult(false, null, null, "CREATE INDEX 문을 제출하세요.");
+            }
+            for (String stmt : statements) {
+                if (!INDEX_DDL.matcher(SqlExecuteService.stripLeadingComments(stmt)).matches()) {
+                    return new SubmitResult(false, null, null,
+                        "인덱스 문제는 CREATE INDEX / DROP INDEX 만 제출할 수 있습니다: " + firstLine(stmt));
+                }
+            }
+            schemaService.initializeSchema(problem.id());
+            schemaService.markDirty();
+            for (String stmt : statements) {
+                try {
+                    jdbcTemplate.execute(stmt);
+                } catch (Exception e) {
+                    return new SubmitResult(false, null, null, "인덱스 생성 오류: " + e.getMessage());
+                }
+            }
+            query = problem.target();
+        } else {
+            if (statements.size() != 1 || !SqlExecuteService.isReadOnly(statements.get(0))
+                || SqlExecuteService.isExplain(statements.get(0))) {
+                return new SubmitResult(false, null, null, "고친 SELECT 문 한 개를 제출하세요.");
+            }
+            schemaService.ensureSchema(problem.id());
+            query = statements.get(0);
+        }
+
+        SqlResult userResult;
+        try {
+            userResult = sqlExecuteService.runOne(query);
+        } catch (Exception e) {
+            return new SubmitResult(false, null, null, "SQL 실행 오류: " + e.getMessage());
+        }
+        SubmitResult resultCheck = validateSelect(problem, userResult);
+        if (!resultCheck.correct()) {
+            return resultCheck;
+        }
+
+        SqlResult plan;
+        try {
+            plan = sqlExecuteService.runOne("EXPLAIN " + query);
+        } catch (Exception e) {
+            return new SubmitResult(false, userResult, null, "EXPLAIN 실행 오류: " + e.getMessage());
+        }
+        List<String> violations = "mysql".equals(dialect())
+            ? PlanChecker.checkMysql(plan, tuning)
+            : PlanChecker.checkH2(plan, tuning);
+        if (!violations.isEmpty()) {
+            return new SubmitResult(false, userResult, null,
+                "결과는 맞지만 실행계획이 기준을 못 넘었습니다.\n- " + String.join("\n- ", violations), plan);
+        }
+        return new SubmitResult(true, userResult, null,
+            "정답입니다! 실행계획 기준 통과 (" + userResult.executionTime() + "ms)", plan);
+    }
+
+    private static String firstLine(String stmt) {
+        String line = stmt.strip().lines().findFirst().orElse("");
+        return line.length() > 80 ? line.substring(0, 80) + "…" : line;
     }
 
     /**

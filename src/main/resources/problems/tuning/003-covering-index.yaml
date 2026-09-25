@@ -1,0 +1,38 @@
+id: "tuning-003"
+title: "커버링 인덱스 — 테이블을 안 읽고 끝내기"
+category: "tuning"
+difficulty: 2
+description: |
+  `orders` 에는 `idx_orders_customer (customer_id)` 가 있어서 대상 쿼리는 이미 인덱스를 탑니다.
+  하지만 `SUM(amount)` 를 구하려고 인덱스로 찾은 행마다 **테이블(클러스터드 인덱스)을 다시 읽습니다.**
+
+  **쿼리에 필요한 컬럼을 전부 담은 인덱스(커버링 인덱스)를 만들어** 테이블 접근을 없애세요.
+  성공하면 `EXPLAIN` 의 `Extra` 에 `Using index` 가 뜹니다.
+
+  주의: `Using index condition` 은 다른 뜻입니다 (Index Condition Pushdown — 여전히 테이블을 읽음).
+  또 `(amount, customer_id)` 처럼 순서를 거꾸로 만들면 `Using index` 는 뜨지만
+  `type=index` — 인덱스 전체를 처음부터 끝까지 훑습니다. 그것도 불합격입니다.
+
+  InnoDB 보조 인덱스에는 PK 가 자동으로 붙어 있어서, `id` 는 따로 넣지 않아도 커버됩니다.
+
+  채점 기준: Extra 에 Using index, 풀스캔·인덱스 풀스캔 금지, 예상 rows 200 이하.
+type: TUNING
+schema: "003-schema.sql"
+target: "SELECT customer_id, SUM(amount) AS total FROM orders WHERE customer_id BETWEEN 100 AND 104 GROUP BY customer_id"
+tuning:
+  mode: INDEX
+  table: orders
+  maxRows: 200
+  forbid: [FULL_SCAN, FULL_INDEX_SCAN]
+  require: [COVERING]
+expected:
+  columns: ["customer_id", "total"]
+  rows:
+    - [100, 940000]
+    - [101, 871400]
+    - [102, 794800]
+    - [103, 718200]
+    - [104, 641600]
+  orderMatters: false
+hint: "WHERE 컬럼을 앞에, SELECT 에만 나오는 컬럼을 뒤에. CREATE INDEX idx_orders_customer_amount ON orders (customer_id, amount)"
+solution: "CREATE INDEX idx_orders_customer_amount ON orders (customer_id, amount)"

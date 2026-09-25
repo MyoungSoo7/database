@@ -51,37 +51,130 @@ public class SqlExecuteService {
      * SELECT ... FOR UPDATE 는 잠금만 걸고 데이터는 안 바꾼다.
      */
     static boolean isReadOnly(String sql) {
-        String trimmed = sql.trim().toUpperCase();
-        if (trimmed.startsWith("SELECT") || trimmed.startsWith("SHOW")) {
+        String trimmed = stripLeadingComments(sql).toUpperCase();
+        if (trimmed.startsWith("SELECT") || trimmed.startsWith("SHOW") || trimmed.startsWith("DESC")) {
             return true;
         }
-        return trimmed.startsWith("WITH") && !DML.matcher(sql).find();
+        return (trimmed.startsWith("WITH") || trimmed.startsWith("EXPLAIN")) && !DML.matcher(sql).find();
     }
 
+    static boolean isExplain(String sql) {
+        String trimmed = stripLeadingComments(sql).toUpperCase();
+        return trimmed.startsWith("EXPLAIN") || trimmed.startsWith("DESC");
+    }
+
+    static boolean isQuery(String sql) {
+        String trimmed = stripLeadingComments(sql).toUpperCase();
+        return trimmed.startsWith("SELECT") || trimmed.startsWith("WITH")
+            || trimmed.startsWith("SHOW") || trimmed.startsWith("EXPLAIN") || trimmed.startsWith("DESC");
+    }
+
+    /** 앞에 붙은 주석(-- , 블록)과 공백을 떼어낸다. 문장 종류를 첫 단어로 가르기 위해. */
+    static String stripLeadingComments(String sql) {
+        String s = sql.strip();
+        while (true) {
+            if (s.startsWith("--")) {
+                int nl = s.indexOf('\n');
+                s = nl < 0 ? "" : s.substring(nl + 1).strip();
+            } else if (s.startsWith("/*") && !s.startsWith("/*+")) {
+                int end = s.indexOf("*/", 2);
+                s = end < 0 ? "" : s.substring(end + 2).strip();
+            } else {
+                return s;
+            }
+        }
+    }
+
+    /**
+     * 세미콜론으로 문장을 나눈다. 따옴표('' " `) 안과 주석(-- , 블록) 안의 세미콜론은 구분자가 아니다.
+     * 주석·공백뿐인 조각은 버린다.
+     */
+    static List<String> splitStatements(String sql) {
+        List<String> out = new ArrayList<>();
+        StringBuilder cur = new StringBuilder();
+        boolean meaningful = false;
+        int n = sql.length();
+        for (int i = 0; i < n; i++) {
+            char c = sql.charAt(i);
+            if (c == '\'' || c == '"' || c == '`') {
+                int j = i + 1;
+                while (j < n) {
+                    char d = sql.charAt(j);
+                    if (d == '\\' && c != '`' && j + 1 < n) { j += 2; continue; }
+                    if (d == c) {
+                        if (j + 1 < n && sql.charAt(j + 1) == c) { j += 2; continue; }
+                        break;
+                    }
+                    j++;
+                }
+                int end = Math.min(j + 1, n);
+                cur.append(sql, i, end);
+                meaningful = true;
+                i = end - 1;
+            } else if (c == '-' && i + 1 < n && sql.charAt(i + 1) == '-') {
+                int j = sql.indexOf('\n', i);
+                int end = j < 0 ? n : j;
+                cur.append(sql, i, end);
+                i = end - 1;
+            } else if (c == '/' && i + 1 < n && sql.charAt(i + 1) == '*') {
+                int j = sql.indexOf("*/", i + 2);
+                int end = j < 0 ? n : j + 2;
+                cur.append(sql, i, end);
+                i = end - 1;
+            } else if (c == ';') {
+                if (meaningful) out.add(cur.toString().trim());
+                cur.setLength(0);
+                meaningful = false;
+            } else {
+                cur.append(c);
+                if (!Character.isWhitespace(c)) meaningful = true;
+            }
+        }
+        if (meaningful) out.add(cur.toString().trim());
+        return out;
+    }
+
+    /**
+     * 문제의 초기 스키마 위에서 SQL 을 실행한다. 세미콜론으로 여러 문장을 주면 차례로 실행하고
+     * 마지막 문장의 결과를 돌려준다 — 튜닝 문제에서 CREATE INDEX 후 EXPLAIN 을 한 번에 보려고.
+     */
     public SqlResult execute(String problemId, String sql) {
         String blocked = checkBlocked(sql);
         if (blocked != null) {
             return new SqlResult(List.of(), List.of(), "차단된 명령어입니다: " + blocked, 0);
         }
+        List<String> statements = splitStatements(sql);
+        if (statements.isEmpty()) {
+            return new SqlResult(List.of(), List.of(), "실행할 SQL 이 없습니다.", 0);
+        }
 
         schemaService.ensureSchema(problemId);
 
         long start = System.currentTimeMillis();
-        try {
-            String trimmed = sql.trim().toUpperCase();
-            if (trimmed.startsWith("SELECT") || trimmed.startsWith("WITH") || trimmed.startsWith("SHOW")) {
-                if (!isReadOnly(sql)) {
-                    schemaService.markDirty();
-                }
-                return executeQuery(sql, start);
-            } else {
+        SqlResult last = null;
+        for (int i = 0; i < statements.size(); i++) {
+            String stmt = statements.get(i);
+            if (!isReadOnly(stmt)) {
                 schemaService.markDirty();
-                return executeUpdate(sql, start);
             }
-        } catch (Exception e) {
-            long elapsed = System.currentTimeMillis() - start;
-            return new SqlResult(List.of(), List.of(), e.getMessage(), elapsed);
+            try {
+                last = runOne(stmt, start);
+            } catch (Exception e) {
+                long elapsed = System.currentTimeMillis() - start;
+                String where = statements.size() > 1 ? (i + 1) + "번째 문장: " : "";
+                return new SqlResult(List.of(), List.of(), where + e.getMessage(), elapsed);
+            }
         }
+        return last;
+    }
+
+    /** 스키마를 건드리지 않고 한 문장을 실행한다. 튜닝 채점이 방금 만든 인덱스를 지우지 않도록. */
+    public SqlResult runOne(String sql) {
+        return runOne(sql, System.currentTimeMillis());
+    }
+
+    private SqlResult runOne(String sql, long start) {
+        return isQuery(sql) ? executeQuery(sql, start) : executeUpdate(sql, start);
     }
 
     private SqlResult executeQuery(String sql, long start) {

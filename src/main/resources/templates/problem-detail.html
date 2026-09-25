@@ -37,7 +37,7 @@
         .result-area th { background: #e8f0fe; color: #1a73e8; padding: 6px 10px; text-align: left; border: 1px solid #c5cae9; }
         .result-area td { padding: 5px 10px; border: 1px solid #e0e0e0; }
         .result-area tr:nth-child(even) td { background: #f8f9fa; }
-        .msg { padding: 6px 10px; border-radius: 4px; font-size: 0.85rem; }
+        .msg { padding: 6px 10px; border-radius: 4px; font-size: 0.85rem; white-space: pre-wrap; }
         .msg.ok { background: #e6f4ea; color: #1e8e3e; }
         .msg.err { background: #fce8e6; color: #c5221f; }
         .correct-label { font-weight: 700; color: #1e8e3e; margin-bottom: 8px; }
@@ -59,6 +59,15 @@
             <p class="description" th:text="${problem.description()}"></p>
         </div>
 
+        <div class="section" th:if="${problem.target() != null}">
+            <h3>튜닝 대상 쿼리</h3>
+            <div class="schema-box" th:text="${problem.target()}"></div>
+            <p style="margin-top:8px;font-size:0.85rem;color:#555;"
+               th:text="${problem.tuning() != null and problem.tuning().mode() == 'REWRITE'}
+                   ? '제출: 같은 결과를 내는 고친 SELECT 문'
+                   : '제출: CREATE INDEX 문 (여러 개면 세미콜론으로 구분)'"></p>
+        </div>
+
         <div class="section">
             <h3>난이도</h3>
             <span class="stars" th:text="${'★'.repeat(problem.difficulty())}">★</span>
@@ -78,7 +87,7 @@
     <!-- Right Panel -->
     <div class="right-panel">
         <div class="editor-container">
-            <textarea id="sql-editor">SELECT </textarea>
+            <textarea id="sql-editor" th:text="${initialSql}">SELECT </textarea>
         </div>
 
         <div class="button-row">
@@ -120,7 +129,7 @@
         .then(r => r.json())
         .then(data => {
             const area = document.getElementById('result-area');
-            if (data.message !== 'OK') {
+            if (!(data.message.startsWith('OK') || data.message.includes('영향'))) {
                 area.innerHTML = '<div class="msg err">' + escapeHtml(data.message) + '</div>';
             } else {
                 area.innerHTML =
@@ -186,6 +195,11 @@
         if (data.expectedResult && data.expectedResult.columns && data.expectedResult.columns.length > 0) {
             html += '<div class="result-section-title">정답</div>';
             html += renderResult(data.expectedResult);
+        }
+
+        if (data.plan && data.plan.columns && data.plan.columns.length > 0) {
+            html += '<div class="result-section-title">실행계획 (EXPLAIN)</div>';
+            html += renderResult(data.plan);
         }
 
         return html;
