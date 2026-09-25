@@ -57,6 +57,8 @@
         <div class="section">
             <h3>문제 설명</h3>
             <p class="description" th:text="${problem.description()}"></p>
+            <p th:if="${problem.expected() != null}" style="margin-top:8px;font-size:0.85rem;color:#555;"
+               th:text="${problem.expected().orderMatters()} ? '채점: 결과 행의 순서까지 봅니다.' : '채점: 결과 행의 순서는 보지 않습니다.'"></p>
         </div>
 
         <div class="section" th:if="${problem.target() != null}">

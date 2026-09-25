@@ -1,0 +1,28 @@
+id: "aggregate-012"
+title: "지역별 판매 상품 종류 수 — 그룹 안의 COUNT(DISTINCT)"
+category: "aggregate"
+difficulty: 1
+description: |
+  `sales` 테이블에서 지역(`region`)별로 **판매한 상품의 종류 수**와 판매 건수를 구하세요.
+  같은 상품이 여러 번 팔려도 종류는 1 로 셉니다.
+
+  결과 컬럼은 `region`, `product_kinds`(서로 다른 `product` 개수), `sale_count`(행 수) 세 개입니다.
+  정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["region", "product_kinds", "sale_count"]
+  rows:
+    - ["광주", 2, 2]
+    - ["대구", 3, 4]
+    - ["부산", 4, 5]
+    - ["서울", 4, 9]
+  orderMatters: false
+hint: "그룹마다 COUNT(DISTINCT product) 와 COUNT(*) 를 비교해 보세요."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT region,
+         COUNT(DISTINCT product) AS product_kinds,
+         COUNT(*) AS sale_count
+  FROM sales
+  GROUP BY region

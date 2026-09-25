@@ -1,0 +1,23 @@
+id: "dml-004"
+title: "UPDATE — 휴면 회원 표시"
+category: "dml"
+difficulty: 1
+description: |
+  `members_dml` 에서 마지막 로그인(`last_login`)이 **2025-01-01 보다 이전**인 회원의 `status` 를 `'DORMANT'` 로 바꾸세요.
+  2025-01-01 당일에 로그인한 회원은 대상이 아닙니다.
+
+  다른 회원과 다른 컬럼(`grade`, `point` 등)은 그대로 두어야 합니다.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 데이터에 제출한 문장을 실행한 뒤 테이블 상태를 확인합니다.
+  바꾸라고 한 것 말고는 아무것도 바뀌면 안 되고, 문자열 값은 대소문자까지 정확히 맞아야 합니다.
+type: DDL
+schema: "schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN CAST((SELECT GROUP_CONCAT(CONCAT_WS(':',id,name,grade,point,last_login,status) ORDER BY id SEPARATOR ',') FROM members_dml) AS BINARY) = CAST('1:김민준:SILVER:7200:2025-03-02:ACTIVE,2:이서연:GOLD:3400:2024-11-20:DORMANT,3:박도윤:SILVER:800:2025-02-14:ACTIVE,4:최지우:GOLD:12000:2024-06-30:DORMANT,5:정하준:BRONZE:0:2024-12-31:DORMANT,6:강서윤:BRONZE:1000:2025-01-01:ACTIVE,7:조예준:BRONZE:5000:2025-01-15:WITHDRAWN,8:윤지아:SILVER:450:2025-02-20:WITHDRAWN' AS BINARY) THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "UPDATE 테이블 SET 컬럼 = 값 WHERE 조건 — WHERE 를 빠뜨리면 모든 행이 바뀝니다. 날짜 경계(< 와 <=)에 주의하세요."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  UPDATE members_dml SET status = 'DORMANT' WHERE last_login < '2025-01-01'

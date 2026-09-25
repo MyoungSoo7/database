@@ -1,0 +1,25 @@
+id: "ddl-003"
+title: "ALTER TABLE CHANGE — 컬럼 이름·길이 한 번에 바꾸기"
+category: "ddl"
+difficulty: 2
+description: |
+  `clubs` 테이블의 `club_nm` 컬럼(`VARCHAR(20) NOT NULL`)을 다음처럼 바꾸세요.
+
+  - 이름: `club_nm` → `name`
+  - 타입: `VARCHAR(100)`, NULL 불가 유지
+  - 컬럼 위치(두 번째)와 기존 데이터는 그대로 유지
+
+  **한 문장**으로 이름과 타입을 함께 바꿔야 합니다.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 스키마에 제출한 문장을 실행한 뒤 `information_schema` 로 구조를 확인합니다.
+type: DDL
+schema: "schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'clubs' AND COLUMN_NAME = 'name' AND DATA_TYPE = 'varchar' AND CHARACTER_MAXIMUM_LENGTH = 100 AND IS_NULLABLE = 'NO' AND ORDINAL_POSITION = 2) AND NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'clubs' AND COLUMN_NAME = 'club_nm') AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'clubs') = 4 THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "RENAME COLUMN 은 이름만, MODIFY 는 타입만 바꿉니다. 둘을 한 번에 하는 것은 CHANGE [COLUMN] 옛이름 새이름 타입 제약."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  ALTER TABLE clubs CHANGE COLUMN club_nm name VARCHAR(100) NOT NULL

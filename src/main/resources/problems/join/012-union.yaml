@@ -1,0 +1,25 @@
+id: "join-012"
+title: "고객 도시와 부서 근무지를 합친 지역 목록 — UNION"
+category: "join"
+difficulty: 1
+description: |
+  고객의 도시(`customers.city`)와 부서 근무지(`departments.location`)를 하나로 합쳐, **중복 없는** 지역 이름 목록을 만드세요.
+
+  결과 컬럼은 `city` 하나입니다. 정렬: `city` 오름차순. 순서도 채점합니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["city"]
+  rows:
+    - ["대전"]
+    - ["부산"]
+    - ["서울"]
+    - ["인천"]
+  orderMatters: true
+hint: "두 SELECT 결과를 세로로 합치되 중복을 없애는 연산자. 컬럼 이름은 첫 SELECT 를 따릅니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT city FROM customers
+  UNION
+  SELECT location FROM departments
+  ORDER BY city

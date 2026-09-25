@@ -1,0 +1,48 @@
+id: "window-009"
+title: "사용자별 최장 연속 로그인 — Gaps and Islands"
+category: "window"
+difficulty: 3
+description: |
+  `login_days` 에는 사용자(`user_name`)가 로그인한 날짜(`login_date`)가 하루 한 행씩 있습니다.
+  **하루도 빠짐없이 이어진 날짜 묶음**을 "연속 로그인" 이라 할 때, 사용자별 **가장 긴 연속 로그인 일수**와 그 시작일을 구하세요.
+
+  - 로그인이 하루뿐인 연속 구간도 길이 1 입니다.
+  - 같은 사용자에게 최장 길이의 구간이 여러 개면 **시작일이 가장 이른** 구간의 시작일을 씁니다.
+  - 월이 바뀌어도(예: 2월 28일 → 3월 1일) 달력상 하루 차이면 연속입니다.
+
+  결과 컬럼은 `user_name`, `longest_streak`(일수), `streak_start`(DATE) 세 개입니다.
+  결과는 `longest_streak` 내림차순, 같으면 `user_name` 오름차순이며 **정렬도 채점합니다**.
+
+  고전 기법: `login_date - ROW_NUMBER()` (일 단위)는 연속된 날짜끼리 같은 값이 됩니다. 그 값으로 묶으면 구간이 나옵니다.
+type: SELECT
+schema: "adv-schema.sql"
+expected:
+  columns: ["user_name", "longest_streak", "streak_start"]
+  rows:
+    - ["민지", 4, "2025-03-08"]
+    - ["서윤", 4, "2025-02-27"]
+    - ["준호", 2, "2025-03-03"]
+    - ["도현", 1, "2025-03-10"]
+  orderMatters: true
+hint: "DATE_SUB(login_date, INTERVAL ROW_NUMBER() OVER (PARTITION BY user_name ORDER BY login_date) DAY) 를 그룹 키로 구간별 COUNT·MIN 을 구하고, 다시 사용자별 1등 구간을 고릅니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  WITH g AS (
+      SELECT user_name, login_date,
+             DATE_SUB(login_date, INTERVAL ROW_NUMBER() OVER (PARTITION BY user_name ORDER BY login_date) DAY) AS grp
+      FROM login_days
+  ),
+  s AS (
+      SELECT user_name, MIN(login_date) AS streak_start, COUNT(*) AS streak_len
+      FROM g
+      GROUP BY user_name, grp
+  ),
+  r AS (
+      SELECT user_name, streak_start, streak_len,
+             ROW_NUMBER() OVER (PARTITION BY user_name ORDER BY streak_len DESC, streak_start) AS rn
+      FROM s
+  )
+  SELECT user_name, streak_len AS longest_streak, streak_start
+  FROM r
+  WHERE rn = 1
+  ORDER BY longest_streak DESC, user_name

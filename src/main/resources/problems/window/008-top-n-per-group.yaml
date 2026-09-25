@@ -1,0 +1,33 @@
+id: "window-008"
+title: "팀별 상위 2명 — 윈도우 결과로 필터링"
+category: "window"
+difficulty: 2
+description: |
+  `players` 에서 *팀별로 점수가 가장 높은 2명* 만 조회하세요.
+  결과 컬럼은 `team`, `name`, `score` 세 개입니다. (점수는 서로 겹치지 않습니다.)
+
+  윈도우 함수는 SELECT 단계에서 계산되므로 **WHERE 에서 바로 쓸 수 없습니다**
+  (`WHERE ROW_NUMBER() OVER (...) <= 2` 는 에러).
+  순번을 매긴 쿼리를 FROM 절 파생 테이블(또는 CTE)로 감싼 뒤, 바깥에서 필터링하세요.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["team", "name", "score"]
+  rows:
+    - ["그린", "오름", 900]
+    - ["그린", "장바람", 880]
+    - ["레드", "김하늘", 920]
+    - ["레드", "박산", 850]
+    - ["블루", "정구름", 990]
+    - ["블루", "조비", 830]
+  orderMatters: false
+hint: "SELECT ... FROM (SELECT ..., ROW_NUMBER() OVER (PARTITION BY team ORDER BY score DESC) AS rn FROM players) t WHERE rn <= 2"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT team, name, score
+  FROM (
+    SELECT team, name, score,
+           ROW_NUMBER() OVER (PARTITION BY team ORDER BY score DESC) AS rn
+    FROM players
+  ) t
+  WHERE rn <= 2

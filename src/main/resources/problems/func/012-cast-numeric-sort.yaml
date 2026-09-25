@@ -1,0 +1,32 @@
+id: "func-012"
+title: "CAST — 문자열 숫자를 숫자 순으로 정렬"
+category: "func"
+difficulty: 2
+description: |
+  `events` 의 회차(`round_no`)는 `VARCHAR` 로 저장되어 있어 그대로 정렬하면 `'1', '10', '100', '11', ...` 처럼 *사전순* 이 됩니다.
+  모든 행사를 회차의 *숫자 크기* 오름차순으로 조회하세요.
+  결과 컬럼은 `round_no`, `title` 두 개입니다 (`round_no` 는 원래 문자열 그대로 출력). *정렬 순서가 채점 대상* 입니다.
+
+  `CAST(값 AS UNSIGNED)` (또는 `SIGNED`, `DECIMAL`) 로 형을 바꿔 정렬합니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["round_no", "title"]
+  rows:
+    - ["1", "SQL 입문 스터디"]
+    - ["2", "백엔드 밋업"]
+    - ["3", "온라인 세미나"]
+    - ["4", "면접 특강"]
+    - ["9", "알고리즘 캠프"]
+    - ["10", "데이터 분석 부트캠프"]
+    - ["11", "클라우드 워크숍"]
+    - ["12", "오픈소스 기여 행사"]
+    - ["20", "해커톤"]
+    - ["100", "연말 네트워킹 파티"]
+  orderMatters: true
+hint: "ORDER BY CAST(round_no AS UNSIGNED)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT round_no, title
+  FROM events
+  ORDER BY CAST(round_no AS UNSIGNED)

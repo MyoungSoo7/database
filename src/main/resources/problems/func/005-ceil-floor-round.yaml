@@ -1,0 +1,34 @@
+id: "func-005"
+title: "CEIL · FLOOR · ROUND — 3회 분할 결제 금액"
+category: "func"
+difficulty: 1
+description: |
+  유료 행사(`fee > 0`)의 참가비를 3회로 나눠 낼 때의 1회 금액을 세 가지 방식으로 계산하세요.
+  - `ceil_pay`: `fee / 3` 을 *올림* (정수)
+  - `floor_pay`: `fee / 3` 을 *내림* (정수)
+  - `round_pay`: `fee / 3` 을 *소수 첫째 자리까지 반올림* (`ROUND(x, 1)`)
+
+  결과 컬럼은 `title`, `fee`, `ceil_pay`, `floor_pay`, `round_pay` 다섯 개입니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["title", "fee", "ceil_pay", "floor_pay", "round_pay"]
+  rows:
+    - ["SQL 입문 스터디", 10000, 3334, 3333, "3333.3"]
+    - ["백엔드 밋업", 25000, 8334, 8333, "8333.3"]
+    - ["데이터 분석 부트캠프", 350000, 116667, 116666, "116666.7"]
+    - ["클라우드 워크숍", 88000, 29334, 29333, "29333.3"]
+    - ["알고리즘 캠프", 120000, 40000, 40000, "40000.0"]
+    - ["해커톤", 50000, 16667, 16666, "16666.7"]
+    - ["면접 특강", 15000, 5000, 5000, "5000.0"]
+    - ["연말 네트워킹 파티", 40000, 13334, 13333, "13333.3"]
+  orderMatters: false
+hint: "CEIL(x), FLOOR(x), ROUND(x, 자릿수)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT title, fee,
+         CEIL(fee / 3) AS ceil_pay,
+         FLOOR(fee / 3) AS floor_pay,
+         ROUND(fee / 3, 1) AS round_pay
+  FROM events
+  WHERE fee > 0

@@ -1,0 +1,24 @@
+id: "dml-009"
+title: "DELETE + 다른 테이블 — 탈퇴 회원 쿠폰 삭제"
+category: "dml"
+difficulty: 2
+description: |
+  `coupons.member_id` 는 `members_dml.id` 를 가리킵니다.
+  `members_dml` 에서 `status` 가 `'WITHDRAWN'`(탈퇴)인 회원이 가진 쿠폰을 `coupons` 에서 모두 삭제하세요.
+
+  - `members_dml` 에 없는 회원 번호를 가진 쿠폰은 탈퇴 여부를 알 수 없으므로 **남깁니다**.
+  - `members_dml` 은 그대로 두어야 합니다.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 데이터에 제출한 문장을 실행한 뒤 테이블 상태를 확인합니다.
+  바꾸라고 한 것 말고는 아무것도 바뀌면 안 되고, 문자열 값은 대소문자까지 정확히 맞아야 합니다.
+type: DDL
+schema: "schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN CAST((SELECT GROUP_CONCAT(CONCAT_WS(':',code,member_id,discount,used,expires_at) ORDER BY code SEPARATOR ',') FROM coupons) AS BINARY) = CAST('BDAY-06:6:2000:0:2025-06-30,EVENT-99:99:1000:0:2025-03-31,SPRING-10:3:5000:0:2025-05-31,VIP-100:4:10000:0:2025-12-31,WELCOME-01:1:3000:0:2025-12-31,WELCOME-02:2:3000:1:2025-12-31' AS BINARY) AND (SELECT COUNT(*) FROM members_dml) = 8 THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "WHERE member_id IN (SELECT id FROM members_dml WHERE ...) 또는 DELETE c FROM coupons c JOIN members_dml m ON ... WHERE ... — '활동 회원이 아닌 것' 으로 뒤집어 쓰면 없는 회원의 쿠폰까지 지워집니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  DELETE FROM coupons WHERE member_id IN (SELECT id FROM members_dml WHERE status = 'WITHDRAWN')

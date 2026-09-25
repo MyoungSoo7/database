@@ -1,0 +1,32 @@
+id: "join-004"
+title: "2025년 1월 주문의 상품 목록 — 3테이블 JOIN"
+category: "join"
+difficulty: 1
+description: |
+  2025년 1월(2025-01-01 ~ 2025-01-31)에 들어온 주문에 담긴 상품을 모두 조회하세요. 주문 상태는 따지지 않습니다.
+  `purchase_items` 는 주문(`purchase_id` → `purchases.id`)과 상품(`goods_id` → `goods.id`)을 잇는 테이블이고 `qty` 는 수량입니다.
+
+  결과 컬럼은 `purchase_id`, `purchase_date`, `goods_name`(상품의 `name`), `qty` 네 개입니다.
+  주문 1건에 상품이 여러 개면 상품마다 한 행입니다. 정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["purchase_id", "purchase_date", "goods_name", "qty"]
+  rows:
+    - [103, "2025-01-05", "볼펜", 2]
+    - [103, "2025-01-05", "노트", 5]
+    - [104, "2025-01-12", "보조배터리", 1]
+    - [105, "2025-01-20", "텀블러", 2]
+    - [105, "2025-01-20", "우산", 1]
+  orderMatters: false
+hint: "purchases → purchase_items → goods 순서로 JOIN 을 두 번."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT p.id AS purchase_id,
+         p.purchase_date,
+         g.name AS goods_name,
+         pi.qty
+  FROM purchases p
+  JOIN purchase_items pi ON pi.purchase_id = p.id
+  JOIN goods g ON g.id = pi.goods_id
+  WHERE p.purchase_date BETWEEN '2025-01-01' AND '2025-01-31'

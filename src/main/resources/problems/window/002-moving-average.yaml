@@ -1,0 +1,35 @@
+id: "window-002"
+title: "3일 이동평균 — ROWS BETWEEN"
+category: "window"
+difficulty: 2
+description: |
+  `daily_visits` 의 각 날짜에 대해 *그날과 직전 2일(총 3일)* 방문자 수의 평균을 구하세요.
+  결과 컬럼은 `visit_date`, `visitors`, `ma3` 세 개입니다. `ma3` 는 `ROUND(값, 1)`.
+  앞쪽에 이전 날이 부족한 첫 두 날은 *있는 행만으로* 평균합니다
+  (첫날은 자기 자신, 둘째 날은 2일 평균). 결과는 `visit_date` 오름차순.
+
+  프레임을 행 개수로 지정하는 `ROWS BETWEEN 2 PRECEDING AND CURRENT ROW` 를 쓰세요.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["visit_date", "visitors", "ma3"]
+  rows:
+    - ["2025-03-01", 120, "120.0"]
+    - ["2025-03-02", 150, "135.0"]
+    - ["2025-03-03", 90, "120.0"]
+    - ["2025-03-04", 200, "146.7"]
+    - ["2025-03-05", 170, "153.3"]
+    - ["2025-03-06", 130, "166.7"]
+    - ["2025-03-07", 160, "153.3"]
+    - ["2025-03-08", 110, "133.3"]
+    - ["2025-03-09", 180, "150.0"]
+    - ["2025-03-10", 140, "143.3"]
+  orderMatters: true
+hint: "AVG(visitors) OVER (ORDER BY visit_date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT visit_date, visitors,
+         ROUND(AVG(visitors) OVER (ORDER BY visit_date
+                                   ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 1) AS ma3
+  FROM daily_visits
+  ORDER BY visit_date

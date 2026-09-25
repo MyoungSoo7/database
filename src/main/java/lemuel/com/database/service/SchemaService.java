@@ -119,7 +119,19 @@ public class SchemaService {
         byte[] bytes = schemaContent.getBytes(java.nio.charset.StandardCharsets.UTF_8);
         ByteArrayResource resource = new ByteArrayResource(bytes);
         try (Connection conn = dataSource.getConnection()) {
-            ScriptUtils.executeSqlScript(conn, resource);
+            // 사용자가 만든 테이블이 외래키로 문제 테이블을 물고 있으면 DROP 이 실패해 그 스키마를 쓰는
+            // 문제가 전부 막힌다. 세션 변수라 풀로 돌려주기 전에 되돌린다.
+            boolean mysql = isMysql(conn);
+            if (mysql) {
+                try (Statement st = conn.createStatement()) { st.execute("SET FOREIGN_KEY_CHECKS = 0"); }
+            }
+            try {
+                ScriptUtils.executeSqlScript(conn, resource);
+            } finally {
+                if (mysql) {
+                    try (Statement st = conn.createStatement()) { st.execute("SET FOREIGN_KEY_CHECKS = 1"); }
+                }
+            }
             baselineIndexes = readAllIndexes(conn);
             pristineProblemId = problemId;
         } catch (SQLException e) {

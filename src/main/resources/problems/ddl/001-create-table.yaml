@@ -1,0 +1,35 @@
+id: "ddl-001"
+title: "CREATE TABLE — 댓글 테이블 만들기"
+category: "ddl"
+difficulty: 1
+description: |
+  게시글(`posts`)에 달릴 댓글을 저장할 `comments` 테이블을 만드세요. 필요한 컬럼은 다음과 같습니다.
+
+  | 컬럼 | 타입 | 조건 |
+  |------|------|------|
+  | `id` | 정수 (`INT` 또는 `BIGINT`) | 기본키 |
+  | `post_id` | 정수 (`INT` 또는 `BIGINT`) | NULL 불가 |
+  | `author` | 문자열 (`VARCHAR`, 길이는 자유) | NULL 불가 |
+  | `content` | 문자열 (`VARCHAR(500)` 또는 `TEXT`) | NULL 불가 |
+  | `created_at` | 날짜+시각 (`DATETIME` 또는 `TIMESTAMP`) | NULL 허용 |
+
+  컬럼 순서와 문자열 길이는 채점하지 않습니다. 기본키는 `id` 한 컬럼이어야 합니다. 외래키는 이 문제에서 요구하지 않습니다.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 스키마에 제출한 문장을 실행한 뒤 `information_schema` 로 구조를 확인합니다.
+type: DDL
+schema: "schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'comments' AND TABLE_TYPE = 'BASE TABLE') AND EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'comments' AND COLUMN_NAME = 'id' AND DATA_TYPE IN ('int', 'bigint')) AND EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'comments' AND COLUMN_NAME = 'post_id' AND DATA_TYPE IN ('int', 'bigint') AND IS_NULLABLE = 'NO') AND EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'comments' AND COLUMN_NAME = 'author' AND DATA_TYPE IN ('varchar', 'char') AND IS_NULLABLE = 'NO') AND EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'comments' AND COLUMN_NAME = 'content' AND DATA_TYPE IN ('varchar', 'text', 'mediumtext', 'longtext') AND IS_NULLABLE = 'NO') AND EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'comments' AND COLUMN_NAME = 'created_at' AND DATA_TYPE IN ('datetime', 'timestamp')) AND (SELECT GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX SEPARATOR ',') FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'comments' AND INDEX_NAME = 'PRIMARY') = 'id' THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "CREATE TABLE 이름 (컬럼 타입 제약, ..., PRIMARY KEY (컬럼)) — NULL 불가는 NOT NULL."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  CREATE TABLE comments (
+    id INT PRIMARY KEY,
+    post_id INT NOT NULL,
+    author VARCHAR(50) NOT NULL,
+    content VARCHAR(500) NOT NULL,
+    created_at DATETIME
+  )

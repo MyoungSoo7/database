@@ -1,0 +1,25 @@
+id: "dml-007"
+title: "UPDATE + 다른 테이블 — 재고 이동 반영"
+category: "dml"
+difficulty: 2
+description: |
+  `stock_moves` 는 재고 이동 기록입니다 (`item_id` 상품의 수량이 `qty` 만큼 변함, 양수=입고·음수=출고).
+  기록된 이동을 **상품별로 모두 합해서** `items.stock` 에 더하세요.
+
+  - 한 상품에 이동 기록이 여러 건일 수 있습니다. 모두 반영해야 합니다.
+  - 이동 기록이 없는 상품의 `stock` 은 그대로입니다.
+  - `stock` 외의 컬럼(`status` 등)과 `stock_moves` 는 그대로 두어야 합니다.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 데이터에 제출한 문장을 실행한 뒤 테이블 상태를 확인합니다.
+  바꾸라고 한 것 말고는 아무것도 바뀌면 안 되고, 문자열 값은 대소문자까지 정확히 맞아야 합니다.
+type: DDL
+schema: "schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN CAST((SELECT GROUP_CONCAT(CONCAT_WS(':',id,name,category,price,stock,status) ORDER BY id SEPARATOR ',') FROM items) AS BINARY) = CAST('1:볼펜:문구:1500:150:ON_SALE,2:노트:문구:3000:80:ON_SALE,3:형광펜:문구:1200:0:SOLD_OUT,4:생수 2L:식품:1100:260:ON_SALE,5:컵라면:식품:1300:120:ON_SALE,6:초코바:식품:1700:60:ON_SALE,7:보조배터리:전자:32000:25:ON_SALE,8:USB 케이블:전자:8900:40:ON_SALE,9:이어폰:전자:45000:20:SOLD_OUT,10:우산:생활:9800:25:ON_SALE' AS BINARY) AND (SELECT COUNT(*) FROM stock_moves) = 7 AND (SELECT SUM(qty) FROM stock_moves) = 90 THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "상품별 합계를 구한 파생 테이블(SELECT item_id, SUM(qty) ... GROUP BY item_id)과 JOIN 해서 UPDATE 하세요. stock_moves 를 그대로 JOIN 하면 한 상품에 여러 행이 붙어도 한 번만 갱신됩니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  UPDATE items i JOIN (SELECT item_id, SUM(qty) AS total FROM stock_moves GROUP BY item_id) m ON m.item_id = i.id SET i.stock = i.stock + m.total

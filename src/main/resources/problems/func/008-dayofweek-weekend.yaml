@@ -1,0 +1,26 @@
+id: "func-008"
+title: "DAYOFWEEK — 주말에 시작하는 행사"
+category: "func"
+difficulty: 2
+description: |
+  `events` 에서 시작일(`start_date`)이 *토요일 또는 일요일* 인 행사를 조회하세요.
+  결과 컬럼은 `title`, `start_date` 두 개입니다.
+
+  MySQL 의 `DAYOFWEEK(date)` 는 *일요일 = 1, 월요일 = 2, …, 토요일 = 7* 을 돌려줍니다.
+  (`WEEKDAY(date)` 는 월요일 = 0 … 일요일 = 6 으로 기준이 다르니 헷갈리지 마세요.)
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["title", "start_date"]
+  rows:
+    - ["온라인 세미나", "2025-03-22"]
+    - ["클라우드 워크숍", "2025-04-19"]
+    - ["해커톤", "2025-06-14"]
+    - ["오픈소스 기여 행사", "2025-08-31"]
+  orderMatters: false
+hint: "DAYOFWEEK 값이 1 또는 7 인 행"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT title, start_date
+  FROM events
+  WHERE DAYOFWEEK(start_date) IN (1, 7)

@@ -1,0 +1,48 @@
+id: "aggregate-013"
+title: "지역·연도별 소계와 총계 — 2단계 WITH ROLLUP + GROUPING"
+category: "aggregate"
+difficulty: 3
+description: |
+  `sales` 테이블에서 **지역(`region`) × 판매 연도** 별 판매 건수와 금액 합계를 구하고,
+  지역마다 **소계 행**, 맨 끝에 **전체 총계 행**을 함께 조회하세요.
+
+  - 판매 연도는 `sale_date` 의 연도이며, 결과에는 `'2024'` 같은 **문자열**로 표시합니다.
+  - 지역별 소계 행: `region` 은 그 지역 이름, `sale_year` 는 문자열 `'소계'`.
+  - 전체 총계 행(1행): `region` 과 `sale_year` 모두 문자열 `'전체'`.
+  - 판매가 없는 (지역, 연도) 조합은 행을 만들지 않습니다 (예: 광주는 2024년 행이 없음).
+  - 결과 어디에도 NULL 이 남으면 안 됩니다.
+
+  결과 컬럼은 `region`, `sale_year`, `sale_count`(판매 건수), `total_amount`(`amount` 합계) 네 개입니다.
+  정렬은 채점하지 않습니다.
+
+  `GROUP BY a, b WITH ROLLUP` 은 (a, b) 그룹 행 + a 별 소계 행 + 총계 행을 만들고,
+  ROLLUP 이 만든 행의 그룹 컬럼은 NULL 입니다. `GROUPING(컬럼)` 으로 그 NULL 을 구분하세요.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["region", "sale_year", "sale_count", "total_amount"]
+  rows:
+    - ["광주", "2025", 2, "350000"]
+    - ["광주", "소계", 2, "350000"]
+    - ["대구", "2024", 2, "1520000"]
+    - ["대구", "2025", 2, "340000"]
+    - ["대구", "소계", 4, "1860000"]
+    - ["부산", "2024", 2, "1300000"]
+    - ["부산", "2025", 3, "3550000"]
+    - ["부산", "소계", 5, "4850000"]
+    - ["서울", "2024", 4, "3700000"]
+    - ["서울", "2025", 5, "4295000"]
+    - ["서울", "소계", 9, "7995000"]
+    - ["전체", "전체", 20, "15055000"]
+  orderMatters: false
+hint: "연도를 파생 테이블에서 먼저 sale_year 컬럼으로 만든 뒤 GROUP BY region, sale_year WITH ROLLUP. 라벨은 GROUPING(region), GROUPING(sale_year) 로 가릅니다 (CASE 안에서 YEAR(sale_date) 를 직접 쓰면 ONLY_FULL_GROUP_BY 에 걸릴 수 있어요)."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT IF(GROUPING(region) = 1, '전체', region) AS region,
+         CASE WHEN GROUPING(region) = 1 THEN '전체'
+              WHEN GROUPING(sale_year) = 1 THEN '소계'
+              ELSE sale_year END AS sale_year,
+         COUNT(*) AS sale_count,
+         SUM(amount) AS total_amount
+  FROM (SELECT region, CAST(YEAR(sale_date) AS CHAR) AS sale_year, amount FROM sales) s
+  GROUP BY region, sale_year WITH ROLLUP

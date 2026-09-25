@@ -1,0 +1,40 @@
+id: "basic-012"
+title: "ORDER BY 여러 키 — 부서별 급여 순"
+category: "basic"
+difficulty: 1
+description: |
+  `employees` 테이블의 모든 직원을 다음 순서로 조회하세요.
+  - 1순위: 부서(`department`) 오름차순
+  - 2순위: 같은 부서 안에서는 급여(`salary`) 내림차순
+  - 3순위: 급여까지 같으면 이름(`name`) 오름차순
+
+  결과 컬럼은 `department`, `name`, `salary` 세 개입니다. *정렬 순서가 채점 대상* 입니다.
+
+  `ORDER BY a ASC, b DESC` 처럼 키마다 방향을 따로 지정합니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["department", "name", "salary"]
+  rows:
+    - ["개발팀", "임지아", 5500]
+    - ["개발팀", "김철수", 5200]
+    - ["개발팀", "윤서연", 4600]
+    - ["개발팀", "박민수", 3600]
+    - ["기획팀", "신유나", 5200]
+    - ["기획팀", "이영희", 4300]
+    - ["기획팀", "김도윤", 3500]
+    - ["디자인팀", "오민재", 4200]
+    - ["디자인팀", "김하은", 3300]
+    - ["영업팀", "서준호", 6500]
+    - ["영업팀", "한지원", 5000]
+    - ["영업팀", "최동현", 4100]
+    - ["영업팀", "강하늘", 3400]
+    - ["인사팀", "정수진", 6800]
+    - ["인사팀", "장우진", 3200]
+  orderMatters: true
+hint: "ORDER BY 에 키 세 개를 쉼표로, 각각 ASC/DESC"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT department, name, salary
+  FROM employees
+  ORDER BY department ASC, salary DESC, name ASC

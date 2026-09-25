@@ -1,0 +1,55 @@
+id: "mysql-012"
+title: "재귀 CTE — 팀 경로 문자열과 하위 조직 포함 인원"
+category: "mysql"
+difficulty: 3
+description: |
+  `org_units` 는 `parent_id` 로 자기 자신을 참조하는 조직 계층입니다 (최상위 '본사' 는 `parent_id` 가 NULL).
+  본사의 깊이를 0 이라 할 때, **깊이 2 인 조직**(팀)마다 다음을 구하세요.
+
+  - `path`: 본사부터 그 팀까지의 이름을 `' > '` (공백·꺾쇠·공백)로 이은 문자열. 예: `본사 > 개발본부 > 백엔드팀`
+  - `team_headcount`: 그 팀 자신 + 그 아래 **모든 하위 조직**(자식, 손자, ...)의 `headcount` 합계
+  - `sub_units`: 그 팀 아래 모든 하위 조직의 수 (팀 자신은 제외)
+
+  결과 컬럼은 `path`, `team_headcount`, `sub_units` 세 개입니다.
+  결과는 `team_headcount` 내림차순, 같으면 `path` 오름차순이며 **정렬도 채점합니다**.
+
+  주의: 재귀 CTE 의 컬럼 타입·길이는 **앵커(첫 SELECT)** 에서 정해집니다.
+  앵커에서 `name` 을 그대로 쓰면 경로가 `VARCHAR(30)` 에 갇혀 `Data too long` 오류가 납니다 → `CAST(name AS CHAR(200))` 처럼 넉넉히 잡으세요.
+type: SELECT
+schema: "adv-schema.sql"
+expected:
+  columns: ["path", "team_headcount", "sub_units"]
+  rows:
+    - ["본사 > 개발본부 > 백엔드팀", "11", 2]
+    - ["본사 > 개발본부 > 프론트엔드팀", "6", 1]
+    - ["본사 > 영업본부 > 국내영업팀", "5", 0]
+    - ["본사 > 영업본부 > 해외영업팀", "3", 0]
+    - ["본사 > 경영지원실 > 인사팀", "2", 0]
+  orderMatters: true
+hint: "재귀하면서 경로와 함께 '내가 속한 팀' 을 들고 내려가세요: 깊이가 2 가 되는 순간 team_id·team_path 를 자기 것으로 정하고, 그 아래로는 부모 값을 물려받습니다. 마지막에 team 으로 GROUP BY."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  WITH RECURSIVE t AS (
+      SELECT id, 0 AS depth,
+             CAST(name AS CHAR(200)) AS path,
+             CAST(NULL AS SIGNED) AS team_id,
+             CAST(NULL AS CHAR(200)) AS team_path,
+             headcount
+      FROM org_units
+      WHERE parent_id IS NULL
+      UNION ALL
+      SELECT o.id, t.depth + 1,
+             CONCAT(t.path, ' > ', o.name),
+             IF(t.depth + 1 = 2, o.id, t.team_id),
+             IF(t.depth + 1 = 2, CONCAT(t.path, ' > ', o.name), t.team_path),
+             o.headcount
+      FROM org_units o
+      JOIN t ON o.parent_id = t.id
+  )
+  SELECT team_path AS path,
+         SUM(headcount) AS team_headcount,
+         COUNT(*) - 1 AS sub_units
+  FROM t
+  WHERE team_id IS NOT NULL
+  GROUP BY team_id, team_path
+  ORDER BY team_headcount DESC, path

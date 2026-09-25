@@ -1,0 +1,30 @@
+id: "subquery-004"
+title: "추리소설을 빌린 독자 — EXISTS"
+category: "subquery"
+difficulty: 1
+description: |
+  `genre` 가 '추리' 인 책을 *한 번이라도* 빌린 독자의 이름을 조회하세요.
+  결과 컬럼은 `name` 하나이며, 같은 독자는 **한 번만** 나와야 합니다.
+
+  `EXISTS (서브쿼리)` 는 서브쿼리가 한 행이라도 돌려주면 TRUE 입니다.
+  JOIN 과 달리 여러 번 빌려도 독자 행이 중복되지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name"]
+  rows:
+    - ["김민준"]
+    - ["이서연"]
+    - ["강하은"]
+  orderMatters: false
+hint: "WHERE EXISTS (SELECT 1 FROM loans JOIN books ... WHERE loans.reader_id = readers.id AND ...)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT r.name
+  FROM readers r
+  WHERE EXISTS (
+    SELECT 1
+    FROM loans l
+    JOIN books b ON b.id = l.book_id
+    WHERE l.reader_id = r.id AND b.genre = '추리'
+  )

@@ -1,0 +1,31 @@
+id: "func-006"
+title: "FLOOR · MOD — 포인트를 쿠폰으로 교환"
+category: "func"
+difficulty: 1
+description: |
+  포인트 1000점마다 쿠폰 1장으로 교환해 줍니다. 포인트(`point`)가 1000 이상인 회원에 대해
+  - `coupons`: 받을 수 있는 쿠폰 장수 (1000 으로 나눈 몫)
+  - `remain_point`: 교환하고 남는 포인트 (1000 으로 나눈 나머지)
+
+  를 구하세요. 결과 컬럼은 `name`, `point`, `coupons`, `remain_point` 네 개입니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "point", "coupons", "remain_point"]
+  rows:
+    - ["김철수", 7350, 7, 350]
+    - ["이영희", 2480, 2, 480]
+    - ["남궁민수", 12040, 12, 40]
+    - ["Tom", 3000, 3, 0]
+    - ["정수연", 25500, 25, 500]
+    - ["황보", 5000, 5, 0]
+    - ["제갈공명", 1999, 1, 999]
+    - ["Alice", 8800, 8, 800]
+    - ["서지아", 4999, 4, 999]
+  orderMatters: false
+hint: "몫은 FLOOR(x / 1000) 또는 DIV, 나머지는 MOD(x, 1000) 또는 %"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT name, point, FLOOR(point / 1000) AS coupons, MOD(point, 1000) AS remain_point
+  FROM members
+  WHERE point >= 1000

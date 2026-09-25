@@ -1,0 +1,43 @@
+id: "join-016"
+title: "무게 구간별 소포 수, 빈 구간과 규격외까지 — 비등가 LEFT JOIN + UNION ALL"
+category: "join"
+difficulty: 3
+description: |
+  `parcel_bands` 는 소포 무게 구간표입니다. 무게가 `min_weight` **이상** `max_weight` **미만**이면 그 구간(`band_name`)에 속합니다
+  (예: 500g 은 '초소형' 이 아니라 '소형'). `parcels` 는 소포 목록이며, 어느 구간에도 속하지 않는 소포도 있습니다.
+
+  구간별 소포 수와 무게 합계를 구하되,
+  - 소포가 하나도 없는 구간도 `parcel_count` 0, `total_weight` 0 으로 **포함**하고,
+  - 어느 구간에도 속하지 않는 소포들은 `band_name` 이 문자열 `'규격외'` 인 **한 행**으로 모아서 붙이세요.
+    (규격외 소포가 없더라도 이 행은 있어야 하지만, 이 데이터에는 규격외 소포가 있습니다.)
+
+  결과 컬럼은 `band_name`, `parcel_count`, `total_weight`(소포 `weight` 합계) 세 개입니다 (구간 5행 + 규격외 1행).
+  정렬은 채점하지 않습니다.
+type: SELECT
+schema: "adv-schema.sql"
+expected:
+  columns: ["band_name", "parcel_count", "total_weight"]
+  rows:
+    - ["대형", 0, "0"]
+    - ["소형", 3, "3299"]
+    - ["중형", 3, "9900"]
+    - ["초소형", 2, "420"]
+    - ["특대형", 0, "0"]
+    - ["규격외", 2, "45500"]
+  orderMatters: false
+hint: "구간표 LEFT JOIN 소포 ON weight >= min_weight AND weight < max_weight 로 빈 구간을 살리고, 규격외는 NOT EXISTS 로 따로 세서 UNION ALL. COUNT(*) 가 아니라 COUNT(p.id) 여야 빈 구간이 0 이 됩니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT b.band_name,
+         COUNT(p.id) AS parcel_count,
+         COALESCE(SUM(p.weight), 0) AS total_weight
+  FROM parcel_bands b
+  LEFT JOIN parcels p ON p.weight >= b.min_weight AND p.weight < b.max_weight
+  GROUP BY b.band_name
+  UNION ALL
+  SELECT '규격외', COUNT(*), COALESCE(SUM(p.weight), 0)
+  FROM parcels p
+  WHERE NOT EXISTS (
+      SELECT 1 FROM parcel_bands b
+      WHERE p.weight >= b.min_weight AND p.weight < b.max_weight
+  )
