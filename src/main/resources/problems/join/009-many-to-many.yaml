@@ -1,0 +1,29 @@
+id: "join-009"
+title: "과정 2개 이상 수강한 직원 — 다대다 중간 테이블"
+category: "join"
+difficulty: 2
+description: |
+  직원(`staff`)과 교육과정(`courses`)은 다대다 관계이고, `enrollments(staff_id, course_id)` 가 둘을 잇습니다.
+  교육과정을 **2개 이상** 수강한 직원에 대해 수강 과정 수와 총 교육 시간(`courses.hours` 합계)을 구하세요.
+
+  결과 컬럼은 `name`(직원 이름), `course_count`, `total_hours` 세 개입니다. 정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "course_count", "total_hours"]
+  rows:
+    - ["오개발", 2, "20"]
+    - ["신코딩", 2, "12"]
+    - ["장영업", 2, "18"]
+  orderMatters: false
+hint: "staff → enrollments → courses 로 이은 뒤 직원별 GROUP BY 와 HAVING."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT s.name,
+         COUNT(*) AS course_count,
+         SUM(c.hours) AS total_hours
+  FROM staff s
+  JOIN enrollments e ON e.staff_id = s.id
+  JOIN courses c ON c.id = e.course_id
+  GROUP BY s.id, s.name
+  HAVING COUNT(*) >= 2

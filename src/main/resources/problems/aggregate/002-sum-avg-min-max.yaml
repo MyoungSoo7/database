@@ -1,0 +1,28 @@
+id: "aggregate-002"
+title: "전체 매출 요약 — SUM·AVG·MIN·MAX"
+category: "aggregate"
+difficulty: 1
+description: |
+  `sales` 테이블 전체 판매 건의 판매 금액(`amount`)을 요약하세요.
+
+  - `total_amount`: 금액 합계
+  - `avg_amount`: 금액 평균, `ROUND(..., 0)` 으로 **소수점 없이 정수 자리까지** 반올림
+  - `min_amount`: 최소 금액
+  - `max_amount`: 최대 금액
+
+  결과는 1행, 컬럼은 `total_amount`, `avg_amount`, `min_amount`, `max_amount` 네 개입니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["total_amount", "avg_amount", "min_amount", "max_amount"]
+  rows:
+    - ["15055000", "752750", 50000, 2500000]
+  orderMatters: false
+hint: "집계 함수 네 개를 한 SELECT 에 나란히 쓰면 됩니다. GROUP BY 는 필요 없습니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT SUM(amount) AS total_amount,
+         ROUND(AVG(amount), 0) AS avg_amount,
+         MIN(amount) AS min_amount,
+         MAX(amount) AS max_amount
+  FROM sales

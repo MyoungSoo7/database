@@ -1,0 +1,21 @@
+id: "dml-008"
+title: "DELETE — 오래된 일반 공지 정리"
+category: "dml"
+difficulty: 1
+description: |
+  `notices` 에서 작성일(`created_at`)이 **2025-01-01 보다 이전**이면서 상단 고정이 아닌(`is_pinned = 0`) 공지를 삭제하세요.
+  고정 공지(`is_pinned = 1`)는 오래됐어도 남겨야 합니다.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 데이터에 제출한 문장을 실행한 뒤 테이블 상태를 확인합니다.
+  바꾸라고 한 것 말고는 아무것도 바뀌면 안 되고, 문자열 값은 대소문자까지 정확히 맞아야 합니다.
+type: DDL
+schema: "schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN CAST((SELECT GROUP_CONCAT(CONCAT_WS(':',id,title,author,created_at,is_pinned) ORDER BY id SEPARATOR ',') FROM notices) AS BINARY) = CAST('1:서비스 오픈 안내:운영팀:2024-03-01:1,3:개인정보처리방침 개정:법무팀:2024-08-20:1,6:신규 결제수단 추가:개발팀:2025-01-02:0,7:봄맞이 이벤트:마케팅팀:2025-03-15:0,8:이용약관 개정:법무팀:2025-04-01:1' AS BINARY) THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "DELETE FROM 테이블 WHERE 조건1 AND 조건2 — 실행 전에 같은 WHERE 로 SELECT 해서 지워질 행을 먼저 확인하는 습관을 들이세요."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  DELETE FROM notices WHERE created_at < '2025-01-01' AND is_pinned = 0

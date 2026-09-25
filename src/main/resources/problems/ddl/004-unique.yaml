@@ -1,0 +1,22 @@
+id: "ddl-004"
+title: "UNIQUE 제약 — 태그 이름 중복 막기"
+category: "ddl"
+difficulty: 1
+description: |
+  `tags` 테이블에 같은 이름의 태그가 두 번 들어가지 않도록 `name` 컬럼에 **UNIQUE 제약**을 추가하세요.
+
+  - `name` 한 컬럼만으로 된 유일 제약이어야 합니다 (`id` 와 묶은 복합 UNIQUE 는 중복 이름을 막지 못합니다).
+  - 제약 이름은 자유입니다.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 스키마에 제출한 문장을 실행한 뒤 `information_schema` 로 구조를 확인합니다.
+type: DDL
+schema: "schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tags' AND INDEX_NAME <> 'PRIMARY' AND NON_UNIQUE = 0 GROUP BY INDEX_NAME HAVING COUNT(*) = 1 AND MAX(COLUMN_NAME) = 'name' AND MAX(SUB_PART) IS NULL) THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "ALTER TABLE 테이블 ADD CONSTRAINT 이름 UNIQUE (컬럼) — CREATE UNIQUE INDEX 로도 됩니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  ALTER TABLE tags ADD CONSTRAINT uq_tags_name UNIQUE (name)

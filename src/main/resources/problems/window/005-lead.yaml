@@ -1,0 +1,35 @@
+id: "window-005"
+title: "지역별 다음 달 매출 — LEAD + PARTITION BY"
+category: "window"
+difficulty: 2
+description: |
+  `monthly_revenue` 의 각 행 옆에 *같은 지역의 다음 달 매출* 을 붙이세요.
+  결과 컬럼은 `region`, `month`, `revenue`, `next_revenue` 네 개입니다.
+  각 지역의 마지막 달(2025-04)은 다음 달이 없으므로 `next_revenue` 가 NULL 입니다.
+
+  `LEAD(컬럼) OVER (PARTITION BY 지역 ORDER BY 월)` 은 같은 파티션 안에서 *다음 행* 값을 가져옵니다.
+  PARTITION BY 를 빠뜨리면 다른 지역의 값이 섞여 들어옵니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["region", "month", "revenue", "next_revenue"]
+  rows:
+    - ["대구", "2025-01", 200, 200]
+    - ["대구", "2025-02", 200, 150]
+    - ["대구", "2025-03", 150, 250]
+    - ["대구", "2025-04", 250, null]
+    - ["부산", "2025-01", 300, 350]
+    - ["부산", "2025-02", 350, 250]
+    - ["부산", "2025-03", 250, 400]
+    - ["부산", "2025-04", 400, null]
+    - ["서울", "2025-01", 500, 450]
+    - ["서울", "2025-02", 450, 600]
+    - ["서울", "2025-03", 600, 550]
+    - ["서울", "2025-04", 550, null]
+  orderMatters: false
+hint: "LEAD(revenue) OVER (PARTITION BY region ORDER BY month)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT region, month, revenue,
+         LEAD(revenue) OVER (PARTITION BY region ORDER BY month) AS next_revenue
+  FROM monthly_revenue

@@ -1,0 +1,22 @@
+id: "ddl-007"
+title: "CREATE VIEW — 공개 글 뷰"
+category: "ddl"
+difficulty: 1
+description: |
+  `posts` 에서 공개 글(`is_public = 1`)만 보여주는 뷰 `v_public_posts` 를 만드세요.
+
+  - 뷰의 컬럼은 `id`, `title`, `board_id` 세 개, 이 순서입니다.
+  - 다른 조건은 넣지 않습니다.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 스키마에 제출한 문장을 실행한 뒤 `information_schema` 로 구조를 확인합니다.
+type: DDL
+schema: "schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.VIEWS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'v_public_posts' AND REGEXP_LIKE(REPLACE(REPLACE(REPLACE(LOWER(VIEW_DEFINITION), CONCAT('`', LOWER(DATABASE()), '`.'), ''), '`', ''), ' ', ''), 'fromposts[a-z0-9_]*where[(](([a-z0-9_]+[.])?is_public(=1|=true|<>0)|(1=|true=|0<>)([a-z0-9_]+[.])?is_public)[)](orderby.*)?$')) AND (SELECT GROUP_CONCAT(COLUMN_NAME ORDER BY ORDINAL_POSITION SEPARATOR ',') FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'v_public_posts') = 'id,title,board_id' THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "CREATE VIEW 뷰이름 AS SELECT ... FROM ... WHERE ..."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  CREATE VIEW v_public_posts AS SELECT id, title, board_id FROM posts WHERE is_public = 1

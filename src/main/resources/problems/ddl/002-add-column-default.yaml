@@ -1,0 +1,23 @@
+id: "ddl-002"
+title: "ALTER TABLE ADD COLUMN — 기본값 있는 컬럼 추가"
+category: "ddl"
+difficulty: 1
+description: |
+  `posts` 테이블에 조회수 컬럼 `view_count` 를 추가하세요.
+
+  - 타입은 정수(`INT` 또는 `BIGINT`)
+  - NULL 불가
+  - 기본값은 `0` — 이미 있는 글 8건도 `0` 으로 채워져야 합니다.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 스키마에 제출한 문장을 실행한 뒤 `information_schema` 로 구조를 확인합니다.
+type: DDL
+schema: "schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'posts' AND COLUMN_NAME = 'view_count' AND DATA_TYPE IN ('int', 'bigint') AND IS_NULLABLE = 'NO' AND COLUMN_DEFAULT = '0') THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "ALTER TABLE 테이블 ADD COLUMN 컬럼 타입 NOT NULL DEFAULT 값 — DEFAULT 가 있으면 기존 행도 그 값으로 채워집니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  ALTER TABLE posts ADD COLUMN view_count INT NOT NULL DEFAULT 0

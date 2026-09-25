@@ -1,0 +1,25 @@
+id: "join-003"
+title: "한 번도 주문하지 않은 고객 — LEFT JOIN ... IS NULL"
+category: "join"
+difficulty: 1
+description: |
+  `customers` 중에서 `purchases` 에 주문이 **한 건도 없는** 고객을 조회하세요.
+  취소된 주문(`status = 'CANCELLED'`)도 주문으로 칩니다.
+
+  결과 컬럼은 `id`, `name` 두 개입니다 (고객의 id 와 이름). 정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["id", "name"]
+  rows:
+    - [4, "최지우"]
+    - [6, "강서아"]
+  orderMatters: false
+hint: "LEFT JOIN 후 짝이 없는 행은 오른쪽 테이블 컬럼이 NULL 입니다. 어느 컬럼을 IS NULL 로 볼까요?"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT c.id,
+         c.name
+  FROM customers c
+  LEFT JOIN purchases p ON p.customer_id = c.id
+  WHERE p.id IS NULL

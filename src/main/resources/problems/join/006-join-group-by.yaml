@@ -1,0 +1,33 @@
+id: "join-006"
+title: "고객별 결제 금액 합계 — JOIN + GROUP BY"
+category: "join"
+difficulty: 2
+description: |
+  결제 완료(`status = 'PAID'`)된 주문만 대상으로, 고객별 총 구매 금액을 구하세요.
+  주문 상품 한 줄의 금액은 `purchase_items.qty * goods.price` 입니다.
+  결제 완료 주문이 없는 고객은 결과에 나오지 않아도 됩니다.
+
+  결과 컬럼은 `name`(고객 이름), `total_spent` 두 개입니다.
+  정렬: `total_spent` 내림차순, 같으면 `name` 오름차순. 순서도 채점합니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "total_spent"]
+  rows:
+    - ["김민준", "102000"]
+    - ["이서연", "87000"]
+    - ["정하준", "24000"]
+    - ["박도윤", "21000"]
+  orderMatters: true
+hint: "customers → purchases → purchase_items → goods 를 이은 뒤 고객으로 GROUP BY, SUM(qty * price)."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT c.name,
+         SUM(pi.qty * g.price) AS total_spent
+  FROM customers c
+  JOIN purchases p ON p.customer_id = c.id
+  JOIN purchase_items pi ON pi.purchase_id = p.id
+  JOIN goods g ON g.id = pi.goods_id
+  WHERE p.status = 'PAID'
+  GROUP BY c.id, c.name
+  ORDER BY total_spent DESC, c.name ASC

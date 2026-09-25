@@ -1,0 +1,36 @@
+id: "join-013"
+title: "지역별 사람 수 (고객 + 직원) — UNION ALL"
+category: "join"
+difficulty: 2
+description: |
+  지역별로 고객 수와 직원 수를 합친 **사람 수**를 구하세요.
+
+  - 고객의 지역은 `customers.city`
+  - 직원의 지역은 소속 부서의 `departments.location` (부서가 없는 직원은 세지 않습니다)
+
+  결과 컬럼은 `city`, `people` 두 개입니다. 정렬은 채점하지 않습니다.
+
+  주의: 두 목록을 합칠 때 중복을 제거하면 같은 지역의 사람이 1명으로 뭉쳐 버립니다. UNION 과 UNION ALL 중 무엇을 써야 할까요?
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["city", "people"]
+  rows:
+    - ["서울", 7]
+    - ["부산", 4]
+    - ["대전", 1]
+    - ["인천", 1]
+  orderMatters: false
+hint: "FROM (SELECT ... UNION ALL SELECT ...) AS t 로 합친 뒤 GROUP BY."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT t.city,
+         COUNT(*) AS people
+  FROM (
+      SELECT city FROM customers
+      UNION ALL
+      SELECT d.location
+      FROM staff s
+      JOIN departments d ON d.dept_id = s.dept_id
+  ) AS t
+  GROUP BY t.city

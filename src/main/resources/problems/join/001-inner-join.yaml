@@ -1,0 +1,32 @@
+id: "join-001"
+title: "주문과 고객 이름 — INNER JOIN"
+category: "join"
+difficulty: 1
+description: |
+  `purchases`(주문)의 `customer_id` 는 `customers`(고객)의 `id` 를 가리킵니다.
+  모든 주문에 대해 주문 번호, 주문한 고객 이름, 주문일을 조회하세요. 주문 상태(`status`)는 따지지 않습니다.
+
+  결과 컬럼은 `purchase_id`(주문의 `id`), `customer_name`(고객의 `name`), `purchase_date` 세 개입니다.
+  정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["purchase_id", "customer_name", "purchase_date"]
+  rows:
+    - [101, "김민준", "2024-12-10"]
+    - [102, "이서연", "2024-12-15"]
+    - [103, "김민준", "2025-01-05"]
+    - [104, "박도윤", "2025-01-12"]
+    - [105, "이서연", "2025-01-20"]
+    - [106, "김민준", "2025-02-03"]
+    - [107, "정하준", "2024-11-28"]
+    - [108, "박도윤", "2025-02-14"]
+  orderMatters: false
+hint: "두 테이블 모두에 짝이 있는 행만 필요하면 JOIN ... ON 연결조건."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT p.id AS purchase_id,
+         c.name AS customer_name,
+         p.purchase_date
+  FROM purchases p
+  JOIN customers c ON c.id = p.customer_id

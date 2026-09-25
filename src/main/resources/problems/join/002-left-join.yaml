@@ -1,0 +1,30 @@
+id: "join-002"
+title: "부서가 없어도 직원은 전부 — LEFT JOIN"
+category: "join"
+difficulty: 1
+description: |
+  `staff`(직원)의 `dept_id` 는 `departments` 의 `dept_id` 를 가리키며, 부서 미배정 직원은 `dept_id` 가 NULL 입니다.
+  **모든 직원**의 이름과 소속 부서 이름을 조회하세요. 부서가 없는 직원도 빠짐없이 나와야 하며, 그 직원의 부서 이름은 NULL 입니다.
+
+  결과 컬럼은 `name`(직원 이름), `dept_name` 두 개입니다. 정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "dept_name"]
+  rows:
+    - ["한대표", "개발팀"]
+    - ["오개발", "개발팀"]
+    - ["신코딩", "개발팀"]
+    - ["장영업", "영업팀"]
+    - ["문판매", "영업팀"]
+    - ["배인사", "인사팀"]
+    - ["조신입", "개발팀"]
+    - ["유수습", null]
+  orderMatters: false
+hint: "INNER JOIN 으로는 dept_id 가 NULL 인 직원이 사라집니다. 왼쪽 테이블을 전부 살리는 JOIN 은?"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT s.name,
+         d.dept_name
+  FROM staff s
+  LEFT JOIN departments d ON d.dept_id = s.dept_id

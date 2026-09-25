@@ -1,0 +1,35 @@
+id: "window-003"
+title: "월별 지역 매출 비중 — 값 / SUM() OVER (PARTITION BY)"
+category: "window"
+difficulty: 2
+description: |
+  `monthly_revenue` 의 각 행에 대해, *그 달 전체 매출 중 해당 지역이 차지하는 비율(%)* 을 구하세요.
+  결과 컬럼은 `month`, `region`, `revenue`, `share_pct` 네 개입니다.
+  `share_pct` = revenue / 같은 달 매출 합계 * 100 을 `ROUND(값, 1)` 로 소수 첫째 자리까지.
+
+  GROUP BY 로 합계를 내면 행이 줄어들지만, `SUM(...) OVER (PARTITION BY month)` 는
+  행을 그대로 둔 채 각 행 옆에 그 달의 합계를 붙여 줍니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["month", "region", "revenue", "share_pct"]
+  rows:
+    - ["2025-01", "서울", 500, "50.0"]
+    - ["2025-01", "부산", 300, "30.0"]
+    - ["2025-01", "대구", 200, "20.0"]
+    - ["2025-02", "서울", 450, "45.0"]
+    - ["2025-02", "부산", 350, "35.0"]
+    - ["2025-02", "대구", 200, "20.0"]
+    - ["2025-03", "서울", 600, "60.0"]
+    - ["2025-03", "부산", 250, "25.0"]
+    - ["2025-03", "대구", 150, "15.0"]
+    - ["2025-04", "서울", 550, "45.8"]
+    - ["2025-04", "부산", 400, "33.3"]
+    - ["2025-04", "대구", 250, "20.8"]
+  orderMatters: false
+hint: "revenue * 100 / SUM(revenue) OVER (PARTITION BY month)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT month, region, revenue,
+         ROUND(revenue * 100 / SUM(revenue) OVER (PARTITION BY month), 1) AS share_pct
+  FROM monthly_revenue

@@ -1,0 +1,27 @@
+id: "aggregate-003"
+title: "지역별 판매 건수와 합계 — GROUP BY"
+category: "aggregate"
+difficulty: 1
+description: |
+  `sales` 테이블에서 지역(`region`)별로 판매 건수와 판매 금액 합계를 구하세요.
+
+  결과 컬럼은 `region`, `sale_count`(판매 건수 = 행 수), `total_amount`(`amount` 합계) 세 개입니다.
+  정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["region", "sale_count", "total_amount"]
+  rows:
+    - ["서울", 9, "7995000"]
+    - ["부산", 5, "4850000"]
+    - ["대구", 4, "1860000"]
+    - ["광주", 2, "350000"]
+  orderMatters: false
+hint: "GROUP BY region 으로 묶은 뒤 COUNT(*) 와 SUM(amount)."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT region,
+         COUNT(*) AS sale_count,
+         SUM(amount) AS total_amount
+  FROM sales
+  GROUP BY region

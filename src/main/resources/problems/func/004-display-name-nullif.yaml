@@ -1,0 +1,37 @@
+id: "func-004"
+title: "TRIM · NULLIF · COALESCE — 표시 이름 정하기"
+category: "func"
+difficulty: 2
+description: |
+  화면에 보여줄 `display_name` 을 정하세요.
+  - 닉네임(`nickname`)의 앞뒤 공백을 *제거한 값* 을 쓴다.
+  - 단, 닉네임이 NULL 이거나, 공백을 제거하니 *빈 문자열* 이 되면 이름(`name`)을 쓴다.
+
+  결과 컬럼은 `id`, `display_name` 두 개이고 `id` 오름차순입니다. *정렬 순서가 채점 대상* 입니다.
+
+  `COALESCE` 는 NULL 만 건너뛰고 빈 문자열 `''` 은 값으로 봅니다.
+  `NULLIF(a, b)` 는 a 와 b 가 같으면 NULL, 다르면 a 를 돌려주므로 '빈 문자열 → NULL' 변환에 씁니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["id", "display_name"]
+  rows:
+    - [1, "철수짱"]
+    - [2, "이영희"]
+    - [3, "민이"]
+    - [4, "남궁민수"]
+    - [5, "tommy"]
+    - [6, "지훈"]
+    - [7, "정수연"]
+    - [8, "보보"]
+    - [9, "제갈공명"]
+    - [10, "ally"]
+    - [11, "윤하늘"]
+    - [12, "지아"]
+  orderMatters: true
+hint: "TRIM 한 결과를 NULLIF 로 빈 문자열이면 NULL 로 바꾼 뒤 COALESCE"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT id, COALESCE(NULLIF(TRIM(nickname), ''), name) AS display_name
+  FROM members
+  ORDER BY id

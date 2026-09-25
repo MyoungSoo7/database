@@ -1,0 +1,30 @@
+id: "subquery-009"
+title: "모든 에세이보다 비싼 책 — ALL"
+category: "subquery"
+difficulty: 2
+description: |
+  `genre` 가 '에세이' 인 *모든* 책보다 가격이 높은 책을 조회하세요.
+  결과 컬럼은 `title`, `price` 두 개입니다.
+
+  - `> ALL (서브쿼리)` : 서브쿼리의 모든 값보다 크다 (= 최댓값보다 크다)
+  - `> ANY (서브쿼리)` : 서브쿼리의 값 중 하나라도보다 크다 (= 최솟값보다 크다)
+
+  이 문제는 `ALL` 로 풀어 보세요. (`> (SELECT MAX(...))` 와 결과가 같습니다.)
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["title", "price"]
+  rows:
+    - ["소년이 온다", 15000]
+    - ["노르웨이의 숲", 16500]
+    - ["종의 기원", 14500]
+    - ["용의자 X의 헌신", 15500]
+    - ["나미야 잡화점의 기적", 16000]
+    - ["백야행", 18000]
+  orderMatters: false
+hint: "WHERE price > ALL (SELECT price FROM books WHERE genre = ...)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT title, price
+  FROM books
+  WHERE price > ALL (SELECT price FROM books WHERE genre = '에세이')

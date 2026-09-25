@@ -1,0 +1,34 @@
+id: "window-004"
+title: "점수 4분위 그룹 — NTILE"
+category: "window"
+difficulty: 1
+description: |
+  `players` 를 점수(`score`)가 높은 순으로 줄 세워 *4개의 그룹* 으로 똑같이 나누세요.
+  점수가 가장 높은 그룹이 1, 가장 낮은 그룹이 4 입니다.
+  결과 컬럼은 `name`, `score`, `quartile` 세 개입니다. (점수는 서로 겹치지 않습니다.)
+
+  `NTILE(n) OVER (ORDER BY ...)` 는 정렬된 행을 n 개 버킷으로 최대한 균등하게 나눠 번호를 붙입니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "score", "quartile"]
+  rows:
+    - ["정구름", 990, 1]
+    - ["김하늘", 920, 1]
+    - ["오름", 900, 1]
+    - ["장바람", 880, 2]
+    - ["박산", 850, 2]
+    - ["조비", 830, 2]
+    - ["이바다", 780, 3]
+    - ["임솔", 740, 3]
+    - ["강노을", 700, 3]
+    - ["한결", 650, 4]
+    - ["최별", 610, 4]
+    - ["윤달", 560, 4]
+  orderMatters: false
+hint: "NTILE(4) OVER (ORDER BY score DESC)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT name, score,
+         NTILE(4) OVER (ORDER BY score DESC) AS quartile
+  FROM players

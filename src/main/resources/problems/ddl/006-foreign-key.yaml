@@ -1,0 +1,22 @@
+id: "ddl-006"
+title: "외래키 추가 — 글은 있는 게시판에만"
+category: "ddl"
+difficulty: 2
+description: |
+  `posts.board_id` 가 항상 실제로 존재하는 게시판(`boards.id`)만 가리키도록 `posts` 테이블에 **외래키**를 추가하세요.
+
+  - 참조: `posts(board_id)` → `boards(id)`
+  - 제약 이름과 ON DELETE / ON UPDATE 옵션은 자유입니다. 기존 글의 `board_id` 는 모두 `boards` 에 있습니다.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 스키마에 제출한 문장을 실행한 뒤 `information_schema` 로 구조를 확인합니다.
+type: DDL
+schema: "schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.KEY_COLUMN_USAGE k JOIN information_schema.TABLE_CONSTRAINTS tc ON tc.CONSTRAINT_SCHEMA = k.CONSTRAINT_SCHEMA AND tc.TABLE_NAME = k.TABLE_NAME AND tc.CONSTRAINT_NAME = k.CONSTRAINT_NAME WHERE k.TABLE_SCHEMA = DATABASE() AND k.TABLE_NAME = 'posts' AND tc.CONSTRAINT_TYPE = 'FOREIGN KEY' AND k.COLUMN_NAME = 'board_id' AND k.REFERENCED_TABLE_NAME = 'boards' AND k.REFERENCED_COLUMN_NAME = 'id' AND (SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE k2 WHERE k2.CONSTRAINT_SCHEMA = k.CONSTRAINT_SCHEMA AND k2.TABLE_NAME = k.TABLE_NAME AND k2.CONSTRAINT_NAME = k.CONSTRAINT_NAME) = 1) THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "ALTER TABLE 자식 ADD CONSTRAINT 이름 FOREIGN KEY (컬럼) REFERENCES 부모 (컬럼)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  ALTER TABLE posts ADD CONSTRAINT fk_posts_board FOREIGN KEY (board_id) REFERENCES boards (id)

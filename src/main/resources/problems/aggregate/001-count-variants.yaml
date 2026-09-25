@@ -1,0 +1,28 @@
+id: "aggregate-001"
+title: "COUNT(*) · COUNT(컬럼) · COUNT(DISTINCT)"
+category: "aggregate"
+difficulty: 1
+description: |
+  `students` 테이블에서 다음 세 값을 한 행으로 구하세요.
+
+  - `total_students`: 전체 학생 수 (행 수)
+  - `with_email`: 이메일(`email`)이 등록된 학생 수 — `email` 이 NULL 인 학생은 세지 않습니다
+  - `class_kinds`: 반 이름(`class_name`)의 서로 다른 값의 개수
+
+  결과 컬럼은 `total_students`, `with_email`, `class_kinds` 세 개입니다.
+
+  COUNT(*) 는 행을 세고, COUNT(컬럼) 은 NULL 이 아닌 값만 세며, COUNT(DISTINCT 컬럼) 은 중복을 제거한 값의 개수를 셉니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["total_students", "with_email", "class_kinds"]
+  rows:
+    - [10, 6, 3]
+  orderMatters: false
+hint: "COUNT(*) 와 COUNT(email) 은 결과가 다릅니다. 서로 다른 값은 DISTINCT 로."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT COUNT(*) AS total_students,
+         COUNT(email) AS with_email,
+         COUNT(DISTINCT class_name) AS class_kinds
+  FROM students
