@@ -1,0 +1,25 @@
+id: "join-014"
+title: "상사보다 급여가 많은 직원 — SELF JOIN + 비교"
+category: "join"
+difficulty: 2
+description: |
+  `staff` 에서 **직속 상사(`manager_id`)보다 급여(`salary`)가 많은** 직원을 찾으세요.
+
+  결과 컬럼은 `employee`, `employee_salary`, `manager`, `manager_salary` 네 개입니다. 정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["employee", "employee_salary", "manager", "manager_salary"]
+  rows:
+    - ["문판매", 6200, "장영업", 6000]
+  orderMatters: false
+hint: "직원 e 와 상사 m 을 SELF JOIN 한 뒤 두 급여를 비교합니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT e.name AS employee,
+         e.salary AS employee_salary,
+         m.name AS manager,
+         m.salary AS manager_salary
+  FROM staff e
+  JOIN staff m ON m.id = e.manager_id
+  WHERE e.salary > m.salary

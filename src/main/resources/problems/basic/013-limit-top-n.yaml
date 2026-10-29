@@ -1,0 +1,25 @@
+id: "basic-013"
+title: "LIMIT — 가장 비싼 상품 3개"
+category: "basic"
+difficulty: 1
+description: |
+  `products` 테이블에서 가격(`price`)이 가장 비싼 상품 3개를 조회하세요.
+  결과 컬럼은 `name`, `price` 두 개이고, `price` 내림차순으로 정렬합니다. *정렬 순서가 채점 대상* 입니다.
+
+  `ORDER BY ... LIMIT n` 은 정렬한 뒤 앞에서 n 행만 가져옵니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "price"]
+  rows:
+    - ["27인치 모니터", 289000]
+    - ["무선 이어폰", 129000]
+    - ["무선 키보드", 45000]
+  orderMatters: true
+hint: "ORDER BY price DESC 뒤에 LIMIT"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT name, price
+  FROM products
+  ORDER BY price DESC
+  LIMIT 3

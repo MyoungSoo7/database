@@ -1,0 +1,25 @@
+id: "aggregate-005"
+title: "매출 300만 원 이상 지역 — HAVING"
+category: "aggregate"
+difficulty: 1
+description: |
+  `sales` 테이블에서 지역(`region`)별 판매 금액(`amount`) 합계를 구하고,
+  그 합계가 **3,000,000 이상**인 지역만 조회하세요.
+
+  결과 컬럼은 `region`, `total_amount` 두 개입니다. 정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["region", "total_amount"]
+  rows:
+    - ["서울", "7995000"]
+    - ["부산", "4850000"]
+  orderMatters: false
+hint: "집계 결과로 거르는 조건은 WHERE 가 아니라 HAVING 에 씁니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT region,
+         SUM(amount) AS total_amount
+  FROM sales
+  GROUP BY region
+  HAVING SUM(amount) >= 3000000

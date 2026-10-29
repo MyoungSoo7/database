@@ -1,0 +1,29 @@
+id: "func-002"
+title: "CHAR_LENGTH vs LENGTH — 세 글자 이름"
+category: "func"
+difficulty: 2
+description: |
+  `members` 에서 이름(`name`)이 정확히 *3글자* 인 회원을 조회하세요. 한글·영문 모두 *글자 수* 기준입니다 (`'Tom'` 도 3글자).
+  결과 컬럼은 `name`, `bytes` 두 개이고, `bytes` 는 그 이름의 *바이트 수* 입니다.
+
+  MySQL 에서 `LENGTH()` 는 *바이트* 수, `CHAR_LENGTH()` 는 *글자* 수입니다.
+  utf8mb4 에서 한글 한 글자는 3바이트라서 `LENGTH('김철수')` 는 9 입니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "bytes"]
+  rows:
+    - ["김철수", 9]
+    - ["이영희", 9]
+    - ["Tom", 3]
+    - ["최지훈", 9]
+    - ["정수연", 9]
+    - ["윤하늘", 9]
+    - ["서지아", 9]
+  orderMatters: false
+hint: "조건에는 글자 수 함수, 출력에는 바이트 수 함수"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT name, LENGTH(name) AS bytes
+  FROM members
+  WHERE CHAR_LENGTH(name) = 3

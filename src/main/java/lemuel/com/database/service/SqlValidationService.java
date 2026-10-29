@@ -131,7 +131,14 @@ public class SqlValidationService {
         String checkQuery = validation.checkPerProfile().getOrDefault(dialect(),
             validation.checkPerProfile().values().iterator().next());
 
-        Integer actualValue = jdbcTemplate.queryForObject(checkQuery, Integer.class);
+        // 제출이 검증 대상 테이블을 지워 버리면(DROP TABLE 등) 검증 쿼리가 실패한다. 500 이 아니라 오답이다.
+        Integer actualValue;
+        try {
+            actualValue = jdbcTemplate.queryForObject(checkQuery, Integer.class);
+        } catch (Exception e) {
+            return new SubmitResult(false, userResult, null,
+                "검증 실패: 문제에서 확인하는 테이블·컬럼을 찾을 수 없습니다.");
+        }
         if (actualValue != null && actualValue == validation.expectedValue()) {
             return new SubmitResult(true, userResult, null,
                 "정답입니다! (" + userResult.executionTime() + "ms)");
@@ -256,8 +263,27 @@ public class SqlValidationService {
     private List<List<String>> normalizeRows(List<List<Object>> rows) {
         return rows.stream()
             .map(row -> row.stream()
-                .map(obj -> obj == null ? "null" : obj.toString())
+                .map(SqlValidationService::normalizeValue)
                 .toList())
             .toList();
+    }
+
+    private static final java.util.regex.Pattern NUMBER =
+        java.util.regex.Pattern.compile("-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?");
+
+    /**
+     * 숫자는 값으로 비교한다. MySQL 은 같은 값도 식에 따라 BIGINT(5250)·DECIMAL(5250.0000)·DOUBLE(5250.0) 로
+     * 돌려줘서 문자열로 비교하면 SUM(x) 와 SUM(x)*1.0 이 다른 답이 된다. 반올림 자릿수가 다르면(146.67 과 146.7) 여전히 다른 값이다.
+     */
+    static String normalizeValue(Object obj) {
+        if (obj == null) {
+            return "null";
+        }
+        String s = obj.toString();
+        if ((obj instanceof Number || obj instanceof String) && NUMBER.matcher(s).matches()) {
+            java.math.BigDecimal d = new java.math.BigDecimal(s).stripTrailingZeros();
+            return d.signum() == 0 ? "0" : d.toPlainString();
+        }
+        return s;
     }
 }

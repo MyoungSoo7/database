@@ -1,0 +1,35 @@
+id: "window-007"
+title: "점수 백분위 — PERCENT_RANK"
+category: "window"
+difficulty: 2
+description: |
+  `players` 각 선수의 점수가 *전체에서 몇 번째 백분위* 인지 구하세요.
+  점수가 낮은 순(오름차순)으로 매겨, 최저점이 0, 최고점이 1 이 되게 합니다.
+  결과 컬럼은 `name`, `score`, `pct_rank` 세 개이고, `pct_rank` 는 `ROUND(값, 2)` 로 소수 둘째 자리까지.
+
+  `PERCENT_RANK() = (순위 - 1) / (전체 행 수 - 1)` 이며 결과가 DOUBLE 이라 반올림해서 보여줍니다.
+  (비슷한 함수 `CUME_DIST()` 는 "현재 값 이하인 행의 비율" 로, 최저점도 0 이 아닙니다.)
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "score", "pct_rank"]
+  rows:
+    - ["윤달", 560, "0.0"]
+    - ["최별", 610, "0.09"]
+    - ["한결", 650, "0.18"]
+    - ["강노을", 700, "0.27"]
+    - ["임솔", 740, "0.36"]
+    - ["이바다", 780, "0.45"]
+    - ["조비", 830, "0.55"]
+    - ["박산", 850, "0.64"]
+    - ["장바람", 880, "0.73"]
+    - ["오름", 900, "0.82"]
+    - ["김하늘", 920, "0.91"]
+    - ["정구름", 990, "1.0"]
+  orderMatters: false
+hint: "ROUND(PERCENT_RANK() OVER (ORDER BY score), 2)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT name, score,
+         ROUND(PERCENT_RANK() OVER (ORDER BY score), 2) AS pct_rank
+  FROM players

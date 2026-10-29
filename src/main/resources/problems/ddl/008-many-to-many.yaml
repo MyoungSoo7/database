@@ -1,0 +1,33 @@
+id: "ddl-008"
+title: "다대다 연결 테이블 — 복합 기본키"
+category: "ddl"
+difficulty: 2
+description: |
+  글(`posts`)과 태그(`tags`)는 다대다 관계입니다. 둘을 잇는 연결 테이블 `post_tags` 를 만드세요.
+
+  | 컬럼 | 타입 | 조건 |
+  |------|------|------|
+  | `post_id` | 정수 (`INT`) | NULL 불가, `posts(id)` 를 참조하는 외래키 |
+  | `tag_id` | 정수 (`INT`) | NULL 불가, `tags(id)` 를 참조하는 외래키 |
+
+  - 기본키는 **(`post_id`, `tag_id`) 순서의 복합키** — 같은 글에 같은 태그가 두 번 붙지 않게 합니다.
+  - 별도의 `id` 컬럼을 기본키로 두지 마세요. 제약 이름은 자유입니다.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 스키마에 제출한 문장을 실행한 뒤 `information_schema` 로 구조를 확인합니다.
+type: DDL
+schema: "schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'post_tags' AND TABLE_TYPE = 'BASE TABLE') AND EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'post_tags' AND COLUMN_NAME = 'post_id' AND DATA_TYPE IN ('int', 'bigint') AND IS_NULLABLE = 'NO') AND EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'post_tags' AND COLUMN_NAME = 'tag_id' AND DATA_TYPE IN ('int', 'bigint') AND IS_NULLABLE = 'NO') AND (SELECT GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX SEPARATOR ',') FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'post_tags' AND INDEX_NAME = 'PRIMARY') = 'post_id,tag_id' AND EXISTS (SELECT 1 FROM information_schema.KEY_COLUMN_USAGE k JOIN information_schema.TABLE_CONSTRAINTS tc ON tc.CONSTRAINT_SCHEMA = k.CONSTRAINT_SCHEMA AND tc.TABLE_NAME = k.TABLE_NAME AND tc.CONSTRAINT_NAME = k.CONSTRAINT_NAME WHERE k.TABLE_SCHEMA = DATABASE() AND k.TABLE_NAME = 'post_tags' AND tc.CONSTRAINT_TYPE = 'FOREIGN KEY' AND k.COLUMN_NAME = 'post_id' AND k.REFERENCED_TABLE_NAME = 'posts' AND k.REFERENCED_COLUMN_NAME = 'id' AND (SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE k2 WHERE k2.CONSTRAINT_SCHEMA = k.CONSTRAINT_SCHEMA AND k2.TABLE_NAME = k.TABLE_NAME AND k2.CONSTRAINT_NAME = k.CONSTRAINT_NAME) = 1) AND EXISTS (SELECT 1 FROM information_schema.KEY_COLUMN_USAGE k JOIN information_schema.TABLE_CONSTRAINTS tc ON tc.CONSTRAINT_SCHEMA = k.CONSTRAINT_SCHEMA AND tc.TABLE_NAME = k.TABLE_NAME AND tc.CONSTRAINT_NAME = k.CONSTRAINT_NAME WHERE k.TABLE_SCHEMA = DATABASE() AND k.TABLE_NAME = 'post_tags' AND tc.CONSTRAINT_TYPE = 'FOREIGN KEY' AND k.COLUMN_NAME = 'tag_id' AND k.REFERENCED_TABLE_NAME = 'tags' AND k.REFERENCED_COLUMN_NAME = 'id' AND (SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE k2 WHERE k2.CONSTRAINT_SCHEMA = k.CONSTRAINT_SCHEMA AND k2.TABLE_NAME = k.TABLE_NAME AND k2.CONSTRAINT_NAME = k.CONSTRAINT_NAME) = 1) THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "CREATE TABLE 안에 PRIMARY KEY (a, b) 와 FOREIGN KEY (a) REFERENCES ... 를 여러 개 적을 수 있습니다. 참조하는 컬럼과 타입이 같아야 합니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  CREATE TABLE post_tags (
+    post_id INT NOT NULL,
+    tag_id INT NOT NULL,
+    PRIMARY KEY (post_id, tag_id),
+    FOREIGN KEY (post_id) REFERENCES posts (id),
+    FOREIGN KEY (tag_id) REFERENCES tags (id)
+  )

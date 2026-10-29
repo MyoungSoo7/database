@@ -1,0 +1,34 @@
+id: "subquery-010"
+title: "두 번 이상 대출된 책 — WITH(CTE) 기본"
+category: "subquery"
+difficulty: 1
+description: |
+  책별 대출 건수를 구한 뒤, *2번 이상* 대출된 책의 제목과 대출 건수를 조회하세요.
+  결과 컬럼은 `title`, `loan_count` 두 개입니다.
+
+  `WITH 이름 AS (서브쿼리)` 로 중간 결과에 이름을 붙이는 **CTE** 를 써 보세요.
+  파생 테이블과 같은 일을 하지만, 쿼리 맨 앞에 두어 위에서 아래로 읽힙니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["title", "loan_count"]
+  rows:
+    - ["채식주의자", 3]
+    - ["소년이 온다", 3]
+    - ["용의자 X의 헌신", 2]
+    - ["백야행", 2]
+    - ["노르웨이의 숲", 2]
+    - ["나미야 잡화점의 기적", 2]
+  orderMatters: false
+hint: "WITH loan_counts AS (SELECT book_id, COUNT(*) AS loan_count FROM loans GROUP BY book_id) SELECT ..."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  WITH loan_counts AS (
+    SELECT book_id, COUNT(*) AS loan_count
+    FROM loans
+    GROUP BY book_id
+  )
+  SELECT b.title, lc.loan_count
+  FROM loan_counts lc
+  JOIN books b ON b.id = lc.book_id
+  WHERE lc.loan_count >= 2

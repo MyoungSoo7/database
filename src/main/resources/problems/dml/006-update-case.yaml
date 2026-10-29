@@ -1,0 +1,28 @@
+id: "dml-006"
+title: "UPDATE CASE — 포인트로 등급 다시 매기기"
+category: "dml"
+difficulty: 2
+description: |
+  `members_dml` 의 **모든 회원**(탈퇴 회원 포함)의 `grade` 를 `point` 기준으로 다시 매기세요.
+
+  | point | grade |
+  |-------|-------|
+  | 5000 이상 | `GOLD` |
+  | 1000 이상 5000 미만 | `SILVER` |
+  | 1000 미만 | `BRONZE` |
+
+  지금 들어 있는 `grade` 는 오래된 값이라 틀린 것도 있습니다. 한 문장으로 세 등급을 모두 반영해야 하며, `grade` 외의 컬럼은 그대로 두어야 합니다.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 데이터에 제출한 문장을 실행한 뒤 테이블 상태를 확인합니다.
+  바꾸라고 한 것 말고는 아무것도 바뀌면 안 되고, 문자열 값은 대소문자까지 정확히 맞아야 합니다.
+type: DDL
+schema: "schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN CAST((SELECT GROUP_CONCAT(CONCAT_WS(':',id,name,grade,point,last_login,status) ORDER BY id SEPARATOR ',') FROM members_dml) AS BINARY) = CAST('1:김민준:GOLD:7200:2025-03-02:ACTIVE,2:이서연:SILVER:3400:2024-11-20:ACTIVE,3:박도윤:BRONZE:800:2025-02-14:ACTIVE,4:최지우:GOLD:12000:2024-06-30:ACTIVE,5:정하준:BRONZE:0:2024-12-31:ACTIVE,6:강서윤:SILVER:1000:2025-01-01:ACTIVE,7:조예준:GOLD:5000:2025-01-15:WITHDRAWN,8:윤지아:BRONZE:450:2025-02-20:WITHDRAWN' AS BINARY) THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "SET grade = CASE WHEN 조건1 THEN 값1 WHEN 조건2 THEN 값2 ELSE 값3 END — WHEN 은 위에서부터 먼저 맞는 것이 쓰입니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  UPDATE members_dml SET grade = CASE WHEN point >= 5000 THEN 'GOLD' WHEN point >= 1000 THEN 'SILVER' ELSE 'BRONZE' END

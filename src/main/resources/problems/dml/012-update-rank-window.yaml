@@ -1,0 +1,34 @@
+id: "dml-012"
+title: "순위로 UPDATE — 지역별 실적 순위에 따라 보너스 매기기"
+category: "dml"
+difficulty: 3
+description: |
+  `sales_reps` 는 영업 사원의 실적(`sales_amt`)과 보너스(`bonus`)입니다. `bonus` 는 지난 분기 값이라 틀린 것도 있습니다.
+  **지역(`region`)별로** `sales_amt` 가 큰 순서로 순위를 매겨 **모든 사원**의 `bonus` 를 다시 정하세요.
+
+  | 지역 내 순위 | bonus |
+  |------------|-------|
+  | 1위 | 300000 |
+  | 2위 | 100000 |
+  | 3위 이하 | 0 |
+
+  - **실적이 같으면 같은 순위**이고, 그 다음 순위는 **건너뜁니다** (1, 1, 3 … / 1, 2, 2, 4 …). 즉 `RANK()` 방식입니다.
+  - 사원이 한 명뿐인 지역의 그 사원은 1위입니다.
+  - `bonus` 외의 컬럼과 같은 스키마의 `newsletter_subs` 는 그대로 두어야 합니다.
+
+  MySQL 은 `UPDATE` 의 `SET`·`WHERE` 에 윈도 함수를 직접 쓸 수 없고, 갱신하는 테이블을 서브쿼리에서 다시 읽는 것도
+  막습니다 (`ERROR 1093`). 순위를 먼저 계산한 결과를 붙여서 갱신하는 방법을 생각해 보세요.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 데이터에 제출한 문장을 실행한 뒤 테이블 상태를 확인합니다.
+  바꾸라고 한 것 말고는 아무것도 바뀌면 안 되고, 문자열 값은 대소문자까지 정확히 맞아야 합니다.
+type: DDL
+schema: "adv-schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN CAST((SELECT GROUP_CONCAT(CONCAT_WS(':',id,name,region,sales_amt,bonus) ORDER BY id SEPARATOR ',') FROM sales_reps) AS BINARY) = CAST('1:김영업:서울:9200:300000,2:이실적:서울:7800:100000,3:박성과:서울:7800:100000,4:최열정:서울:6100:0,5:정신입:서울:3000:0,6:강부산:부산:8800:300000,7:조해운:부산:8800:300000,8:윤광안:부산:5000:0,9:장수영:부산:4200:0,10:한대구:대구:6600:300000,11:오달서:대구:5900:100000,12:서동성:대구:4100:0,13:신광주:광주:3500:300000' AS BINARY) AND (SELECT COUNT(*) FROM newsletter_subs) = 12 THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "RANK() OVER (PARTITION BY region ORDER BY sales_amt DESC) 를 파생 테이블(또는 WITH)로 먼저 계산한 뒤 UPDATE sales_reps s JOIN (...) r ON r.id = s.id SET s.bonus = CASE r.rk ... END. 파생 테이블은 먼저 구체화되므로 같은 테이블을 읽어도 됩니다. 3위 이하를 0 으로 만드는 것도 잊지 마세요."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  UPDATE sales_reps s JOIN (SELECT id, RANK() OVER (PARTITION BY region ORDER BY sales_amt DESC) AS rk FROM sales_reps) r ON r.id = s.id SET s.bonus = CASE r.rk WHEN 1 THEN 300000 WHEN 2 THEN 100000 ELSE 0 END

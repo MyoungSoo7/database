@@ -1,0 +1,44 @@
+id: "func-010"
+title: "CASE WHEN — 포인트 구간별 레벨"
+category: "func"
+difficulty: 1
+description: |
+  회원 포인트(`point`)로 `level` 을 매기세요.
+  - 10000 이상 → `'PLATINUM'`
+  - 5000 이상 10000 미만 → `'GOLD'`
+  - 1000 이상 5000 미만 → `'SILVER'`
+  - 1000 미만 → `'BASIC'`
+
+  결과 컬럼은 `name`, `point`, `level` 세 개이고, `point` 내림차순, 같으면 `id` 오름차순입니다. *정렬 순서가 채점 대상* 입니다.
+
+  `CASE WHEN 조건1 THEN 값1 WHEN 조건2 THEN 값2 ... ELSE 기본값 END` 는 *위에서부터* 처음 참인 조건의 값을 씁니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "point", "level"]
+  rows:
+    - ["정수연", 25500, "PLATINUM"]
+    - ["남궁민수", 12040, "PLATINUM"]
+    - ["Alice", 8800, "GOLD"]
+    - ["김철수", 7350, "GOLD"]
+    - ["황보", 5000, "GOLD"]
+    - ["서지아", 4999, "SILVER"]
+    - ["Tom", 3000, "SILVER"]
+    - ["이영희", 2480, "SILVER"]
+    - ["제갈공명", 1999, "SILVER"]
+    - ["박민", 960, "BASIC"]
+    - ["최지훈", 450, "BASIC"]
+    - ["윤하늘", 0, "BASIC"]
+  orderMatters: true
+hint: "큰 구간부터 차례로 WHEN 을 쓰면 상한 조건을 생략할 수 있다"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT name, point,
+         CASE
+           WHEN point >= 10000 THEN 'PLATINUM'
+           WHEN point >= 5000 THEN 'GOLD'
+           WHEN point >= 1000 THEN 'SILVER'
+           ELSE 'BASIC'
+         END AS level
+  FROM members
+  ORDER BY point DESC, id

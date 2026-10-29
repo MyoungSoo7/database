@@ -1,0 +1,26 @@
+id: "dml-001"
+title: "INSERT — 새 상품 한 건 추가"
+category: "dml"
+difficulty: 1
+description: |
+  `items` 테이블에 아래 상품 한 건을 추가하세요.
+
+  | id | name | category | price | stock | status |
+  |----|------|----------|-------|-------|--------|
+  | 11 | 무선 마우스 | 전자 | 25000 | 30 | ON_SALE |
+
+  기존 상품 10건은 그대로 두어야 합니다.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 데이터에 제출한 문장을 실행한 뒤 테이블 상태를 확인합니다.
+  바꾸라고 한 것 말고는 아무것도 바뀌면 안 되고, 문자열 값은 대소문자까지 정확히 맞아야 합니다.
+type: DDL
+schema: "schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN CAST((SELECT GROUP_CONCAT(CONCAT_WS(':',id,name,category,price,stock,status) ORDER BY id SEPARATOR ',') FROM items) AS BINARY) = CAST('1:볼펜:문구:1500:120:ON_SALE,2:노트:문구:3000:80:ON_SALE,3:형광펜:문구:1200:0:SOLD_OUT,4:생수 2L:식품:1100:200:ON_SALE,5:컵라면:식품:1300:150:ON_SALE,6:초코바:식품:1700:60:ON_SALE,7:보조배터리:전자:32000:15:ON_SALE,8:USB 케이블:전자:8900:40:ON_SALE,9:이어폰:전자:45000:0:SOLD_OUT,10:우산:생활:9800:25:ON_SALE,11:무선 마우스:전자:25000:30:ON_SALE' AS BINARY) THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "INSERT INTO 테이블 (컬럼1, 컬럼2, ...) VALUES (값1, 값2, ...) — 컬럼 목록을 적어 두면 순서를 헷갈리지 않습니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  INSERT INTO items (id, name, category, price, stock, status) VALUES (11, '무선 마우스', '전자', 25000, 30, 'ON_SALE')

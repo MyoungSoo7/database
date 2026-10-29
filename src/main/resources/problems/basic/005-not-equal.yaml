@@ -1,0 +1,29 @@
+id: "basic-005"
+title: "부정 조건 — <> 와 NOT"
+category: "basic"
+difficulty: 1
+description: |
+  `products` 테이블에서 카테고리가 `'전자기기'` 가 *아니고*, 재고(`stock`)가 0 이 *아닌* 상품을 조회하세요.
+  결과 컬럼은 `name`, `category`, `stock` 세 개입니다.
+
+  '같지 않다' 는 `<>` (또는 `!=`) 로 쓰고, 조건 전체를 부정할 때는 `NOT (조건)` 을 씁니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "category", "stock"]
+  rows:
+    - ["노트북 거치대", "사무용품", 40]
+    - ["볼펜 10자루", "사무용품", 200]
+    - ["A4 복사용지", "사무용품", 60]
+    - ["스테인리스 텀블러", "생활용품", 25]
+    - ["가습기", "생활용품", 12]
+    - ["머그컵", "생활용품", 80]
+    - ["독서대", "사무용품", 10]
+    - ["전기 포트", "생활용품", 18]
+  orderMatters: false
+hint: "category <> ... AND stock <> 0"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT name, category, stock
+  FROM products
+  WHERE category <> '전자기기' AND stock <> 0

@@ -1,0 +1,43 @@
+id: "subquery-014"
+title: "빈 날짜를 0 으로 채운 일별 대출 건수 — 재귀 CTE 날짜 시리즈"
+category: "subquery"
+difficulty: 3
+description: |
+  2025-03-01 부터 2025-03-10 까지 **10일 모두**에 대해 그날 대출된 건수(`loans.loan_date` 기준)를 조회하세요.
+  대출이 없던 날도 빠지지 않고 `loan_count` 0 으로 나와야 합니다.
+
+  결과 컬럼은 `loan_date`(DATE), `loan_count` 두 개이며 정확히 10행입니다.
+  결과는 `loan_date` 오름차순이며 **정렬도 채점합니다**.
+
+  `loans` 에는 대출이 있던 날짜만 있으므로, 먼저 `WITH RECURSIVE` 로 날짜 10개를 만들어 낸 뒤
+  그 날짜 목록을 기준으로 대출을 붙여야 합니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["loan_date", "loan_count"]
+  rows:
+    - ["2025-03-01", 0]
+    - ["2025-03-02", 1]
+    - ["2025-03-03", 1]
+    - ["2025-03-04", 0]
+    - ["2025-03-05", 0]
+    - ["2025-03-06", 0]
+    - ["2025-03-07", 0]
+    - ["2025-03-08", 0]
+    - ["2025-03-09", 0]
+    - ["2025-03-10", 1]
+  orderMatters: true
+hint: "WITH RECURSIVE d AS (SELECT DATE '2025-03-01' AS dt UNION ALL SELECT dt + INTERVAL 1 DAY FROM d WHERE dt < '2025-03-10') 다음, d LEFT JOIN loans 후 COUNT(l.id)."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  WITH RECURSIVE d AS (
+      SELECT DATE '2025-03-01' AS loan_date
+      UNION ALL
+      SELECT loan_date + INTERVAL 1 DAY FROM d WHERE loan_date < '2025-03-10'
+  )
+  SELECT d.loan_date,
+         COUNT(l.id) AS loan_count
+  FROM d
+  LEFT JOIN loans l ON l.loan_date = d.loan_date
+  GROUP BY d.loan_date
+  ORDER BY d.loan_date

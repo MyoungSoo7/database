@@ -1,0 +1,32 @@
+id: "join-017"
+title: "전자 제품을 결제한 적 없는 고객 — 조건이 여러 겹인 안티 조인"
+category: "join"
+difficulty: 3
+description: |
+  `customers` → `purchases`(주문, `status` 는 'PAID' 또는 'CANCELLED') → `purchase_items` → `goods` 로 이어지는 쇼핑 데이터가 있습니다.
+  **결제 완료(`status = 'PAID'`) 주문으로 `category` 가 '전자' 인 상품을 한 번도 산 적이 없는 고객**을 모두 조회하세요.
+
+  - 주문이 아예 없는 고객도 포함합니다.
+  - 취소(`CANCELLED`)된 주문에만 전자 상품이 있었던 고객은 "산 적 없음" 으로 보고 **포함**합니다.
+
+  결과 컬럼은 `id`, `name` 두 개입니다. 정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["id", "name"]
+  rows:
+    - [3, "박도윤"]
+    - [4, "최지우"]
+    - [5, "정하준"]
+    - [6, "강서아"]
+  orderMatters: false
+hint: "'PAID 이면서 전자' 라는 조건 묶음 전체가 안티 조인의 대상입니다. LEFT JOIN (purchases JOIN purchase_items JOIN goods) ON ... AND status = 'PAID' 처럼 괄호로 묶거나 NOT EXISTS 를 쓰세요. 조건을 WHERE 에 두면 취소 주문 고객이 잘못 빠집니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT c.id, c.name
+  FROM customers c
+  LEFT JOIN (purchases p
+             JOIN purchase_items pi ON pi.purchase_id = p.id
+             JOIN goods g ON g.id = pi.goods_id AND g.category = '전자')
+         ON p.customer_id = c.id AND p.status = 'PAID'
+  WHERE p.id IS NULL

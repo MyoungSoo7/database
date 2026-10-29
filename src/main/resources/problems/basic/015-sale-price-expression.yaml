@@ -1,0 +1,30 @@
+id: "basic-015"
+title: "계산식으로 필터링 — 할인가 2만 원 이하"
+category: "basic"
+difficulty: 2
+description: |
+  `products` 의 할인가는 `price * (100 - discount_rate) / 100` 입니다 (`discount_rate` 는 % 단위 정수, 0 이면 할인 없음).
+  할인가가 20000 *이하* 인 상품을 조회하세요.
+  결과 컬럼은 `name`, `price`, `sale_price` 세 개이고, `sale_price` 는 `ROUND(할인가)` 로 *소수점 없이 반올림* 한 값입니다.
+  `sale_price` 오름차순, 같으면 `id` 오름차순으로 정렬합니다. *정렬 순서가 채점 대상* 입니다.
+
+  참고: MySQL 은 WHERE 절에서 SELECT 의 별칭(`sale_price`)을 쓸 수 없습니다. 계산식을 WHERE 에 다시 적어야 합니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "price", "sale_price"]
+  rows:
+    - ["볼펜 10자루", 5000, "4500"]
+    - ["USB-C 케이블", 9000, "7200"]
+    - ["머그컵", 8000, "8000"]
+    - ["스테인리스 텀블러", 18000, "12600"]
+    - ["데스크 매트", 15000, "15000"]
+    - ["A4 복사용지", 21000, "19950"]
+  orderMatters: true
+hint: "WHERE 에 할인가 계산식을 그대로 한 번 더 쓴다 (별칭은 WHERE 에서 못 씀)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT name, price, ROUND(price * (100 - discount_rate) / 100) AS sale_price
+  FROM products
+  WHERE price * (100 - discount_rate) / 100 <= 20000
+  ORDER BY sale_price, id

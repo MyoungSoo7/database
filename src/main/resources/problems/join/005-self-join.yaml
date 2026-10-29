@@ -1,0 +1,29 @@
+id: "join-005"
+title: "직원과 직속 상사 — SELF JOIN"
+category: "join"
+difficulty: 1
+description: |
+  `staff` 의 `manager_id` 는 같은 `staff` 테이블의 `id`(직속 상사)를 가리킵니다. 상사가 없으면 NULL 입니다.
+  **상사가 있는 직원**에 대해 직원 이름과 상사 이름을 조회하세요. 상사가 없는 직원은 제외합니다.
+
+  결과 컬럼은 `employee`(직원 이름), `manager`(상사 이름) 두 개입니다. 정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["employee", "manager"]
+  rows:
+    - ["오개발", "한대표"]
+    - ["신코딩", "오개발"]
+    - ["장영업", "한대표"]
+    - ["문판매", "장영업"]
+    - ["배인사", "한대표"]
+    - ["조신입", "오개발"]
+    - ["유수습", "배인사"]
+  orderMatters: false
+hint: "같은 테이블을 별칭 두 개(직원용 e, 상사용 m)로 JOIN 합니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT e.name AS employee,
+         m.name AS manager
+  FROM staff e
+  JOIN staff m ON m.id = e.manager_id

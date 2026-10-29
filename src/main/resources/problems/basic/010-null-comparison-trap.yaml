@@ -1,0 +1,28 @@
+id: "basic-010"
+title: "NULL 비교 함정 — 조건에서 빠지는 행"
+category: "basic"
+difficulty: 2
+description: |
+  `employees` 테이블에서 부서가 `'개발팀'` 또는 `'영업팀'` 이고, 영업 수당(`commission`)이 300 *미만* 인 직원을 조회하세요.
+  단, 수당이 NULL 인 직원은 '수당 없음' 으로 보고 300 미만에 *포함* 합니다.
+  결과 컬럼은 `name`, `department`, `commission` 세 개입니다 (`commission` 은 원래 값 그대로, NULL 이면 NULL).
+
+  `commission < 300` 만 쓰면 NULL 과의 비교 결과가 *UNKNOWN* 이라 NULL 인 행이 조용히 빠집니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "department", "commission"]
+  rows:
+    - ["김철수", "개발팀", null]
+    - ["박민수", "개발팀", null]
+    - ["강하늘", "영업팀", 100]
+    - ["윤서연", "개발팀", null]
+    - ["서준호", "영업팀", 0]
+  orderMatters: false
+hint: "commission < 300 에 IS NULL 조건을 OR 로 더하고, 괄호에 주의"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT name, department, commission
+  FROM employees
+  WHERE department IN ('개발팀', '영업팀')
+    AND (commission < 300 OR commission IS NULL)

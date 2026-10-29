@@ -1,0 +1,36 @@
+id: "basic-003"
+title: "연봉 계산 — 산술식과 별칭"
+category: "basic"
+difficulty: 1
+description: |
+  `employees` 테이블의 모든 직원에 대해 이름과 *연봉* 을 조회하세요.
+  `salary` 는 월급(단위: 천원)이고, 연봉은 `salary × 12` 입니다.
+  결과 컬럼은 `name`, `annual_salary` 두 개입니다.
+
+  SELECT 절에는 컬럼뿐 아니라 *산술식* 도 쓸 수 있고, `AS` 로 결과 컬럼 이름(별칭)을 붙입니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "annual_salary"]
+  rows:
+    - ["김철수", 62400]
+    - ["이영희", 51600]
+    - ["박민수", 43200]
+    - ["정수진", 81600]
+    - ["최동현", 49200]
+    - ["강하늘", 40800]
+    - ["윤서연", 55200]
+    - ["김도윤", 42000]
+    - ["한지원", 60000]
+    - ["오민재", 50400]
+    - ["김하은", 39600]
+    - ["서준호", 78000]
+    - ["임지아", 66000]
+    - ["장우진", 38400]
+    - ["신유나", 62400]
+  orderMatters: false
+hint: "SELECT 절에서 salary * 12 를 계산하고 AS 로 이름을 붙인다"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT name, salary * 12 AS annual_salary
+  FROM employees

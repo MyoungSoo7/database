@@ -1,0 +1,36 @@
+id: "subquery-013"
+title: "한강의 책을 전부 빌린 독자 — 관계 나눗셈 (NOT EXISTS 이중 부정)"
+category: "subquery"
+difficulty: 3
+description: |
+  저자 이름(`authors.name`)이 **'한강'** 인 작가의 책(`books`)을 **한 권도 빠짐없이 모두** 빌린 적이 있는 독자를 조회하세요.
+  대출 기록(`loans`)이 있으면 반납 여부와 관계없이 "빌린 적 있음" 으로 봅니다. 같은 책을 여러 번 빌렸어도 한 권으로 셉니다.
+
+  결과 컬럼은 `id`, `name`(독자 `readers` 의 id·이름) 두 개입니다. 정렬은 채점하지 않습니다.
+
+  "모든 X 를 한 독자" = "그 독자가 빌리지 **않은** X 가 **존재하지 않는** 독자" 로 바꿔 생각하면
+  `NOT EXISTS ( ... NOT EXISTS ( ... ))` 이중 부정으로 풀 수 있습니다.
+  (다른 풀이: 독자별로 빌린 한강 책의 `COUNT(DISTINCT)` 가 한강 책 전체 수와 같은지 비교)
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["id", "name"]
+  rows:
+    - [1, "김민준"]
+    - [5, "정도윤"]
+  orderMatters: false
+hint: "바깥: readers r. 가운데: 한강의 책 b 중에서 — 안쪽: r 이 b 를 빌린 loans 행이 없는 것 — 이 하나도 없으면 r 을 선택."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT r.id, r.name
+  FROM readers r
+  WHERE NOT EXISTS (
+      SELECT 1
+      FROM books b
+      JOIN authors a ON a.id = b.author_id
+      WHERE a.name = '한강'
+        AND NOT EXISTS (
+            SELECT 1 FROM loans l
+            WHERE l.reader_id = r.id AND l.book_id = b.id
+        )
+  )

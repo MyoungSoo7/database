@@ -1,0 +1,28 @@
+id: "subquery-003"
+title: "책이 없는 저자 — NOT IN 과 NULL 함정"
+category: "subquery"
+difficulty: 2
+description: |
+  `authors` 중 `books` 에 *쓴 책이 한 권도 없는* 저자의 이름을 조회하세요.
+  결과 컬럼은 `name` 하나입니다.
+
+  **함정**: `books.author_id` 에는 작자 미상이라 `NULL` 인 행이 있습니다.
+  `id NOT IN (SELECT author_id FROM books)` 를 그대로 쓰면 결과가 **0행** 이 됩니다.
+  `x NOT IN (1, 2, NULL)` 은 `x <> 1 AND x <> 2 AND x <> NULL` 이고,
+  `x <> NULL` 은 항상 UNKNOWN 이라 전체가 절대 TRUE 가 되지 않기 때문입니다.
+
+  서브쿼리에서 NULL 을 걸러내거나 `NOT EXISTS` 로 바꿔서, 실제로 책이 없는 저자가 나오게 하세요.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name"]
+  rows:
+    - ["박완서"]
+    - ["알베르 카뮈"]
+  orderMatters: false
+hint: "서브쿼리에 WHERE author_id IS NOT NULL 을 붙이거나 NOT EXISTS 를 쓰세요"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT name
+  FROM authors
+  WHERE id NOT IN (SELECT author_id FROM books WHERE author_id IS NOT NULL)

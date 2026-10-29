@@ -1,0 +1,27 @@
+id: "basic-006"
+title: "IN — 여러 값 중 하나와 일치"
+category: "basic"
+difficulty: 1
+description: |
+  `employees` 테이블에서 직급(`position`)이 `'과장'` 또는 `'부장'` 인 직원을 조회하세요.
+  결과 컬럼은 `name`, `position`, `department` 세 개입니다.
+
+  `OR` 를 여러 번 쓰는 대신 `IN (값1, 값2, ...)` 으로 간단히 쓸 수 있습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "position", "department"]
+  rows:
+    - ["김철수", "과장", "개발팀"]
+    - ["정수진", "부장", "인사팀"]
+    - ["한지원", "과장", "영업팀"]
+    - ["서준호", "부장", "영업팀"]
+    - ["임지아", "과장", "개발팀"]
+    - ["신유나", "과장", "기획팀"]
+  orderMatters: false
+hint: "WHERE position IN (...)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT name, position, department
+  FROM employees
+  WHERE position IN ('과장', '부장')

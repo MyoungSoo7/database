@@ -1,0 +1,31 @@
+id: "join-010"
+title: "급여 등급 매기기 — 비등가 조인"
+category: "join"
+difficulty: 2
+description: |
+  `grade_levels` 는 급여 구간표입니다. 급여가 `min_salary` 이상 `max_salary` 이하이면 그 등급(`level_name`)에 속합니다.
+  모든 직원의 이름, 급여, 급여 등급을 조회하세요. (구간은 겹치지 않고 모든 직원이 정확히 한 구간에 속합니다.)
+
+  결과 컬럼은 `name`, `salary`, `level_name` 세 개입니다. 정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "salary", "level_name"]
+  rows:
+    - ["한대표", 9000, "G4"]
+    - ["오개발", 6500, "G3"]
+    - ["신코딩", 4800, "G2"]
+    - ["장영업", 6000, "G3"]
+    - ["문판매", 6200, "G3"]
+    - ["배인사", 5200, "G2"]
+    - ["조신입", 3200, "G1"]
+    - ["유수습", 2800, "G1"]
+  orderMatters: false
+hint: "JOIN 조건이 꼭 = 일 필요는 없습니다. BETWEEN 도 됩니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT s.name,
+         s.salary,
+         g.level_name
+  FROM staff s
+  JOIN grade_levels g ON s.salary BETWEEN g.min_salary AND g.max_salary

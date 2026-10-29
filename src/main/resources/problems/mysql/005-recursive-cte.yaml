@@ -1,7 +1,7 @@
 id: "mysql-005"
 title: "재귀 CTE — 부서 계층 전체 조회"
 category: "mysql"
-difficulty: 3
+difficulty: 2
 description: |
   `departments` 테이블은 *자기 참조 (parent_id)* 로 부서 계층을 표현합니다.
   *기술본부 (id=2)* 의 *자기 자신 + 모든 하위 부서* 를 보여주세요.

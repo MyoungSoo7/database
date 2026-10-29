@@ -45,4 +45,17 @@ class SqlValidationServiceTest {
             "SELECT * FROM nonexistent_table_xyz");
         assertThat(result.correct()).isFalse();
     }
+
+    @Test
+    void numbersCompareByValueNotByType() {
+        assertThat(SqlValidationService.normalizeValue(new java.math.BigDecimal("5250.0000")))
+            .isEqualTo(SqlValidationService.normalizeValue(5250L))
+            .isEqualTo(SqlValidationService.normalizeValue(5250.0))
+            .isEqualTo(SqlValidationService.normalizeValue("5250.0000"));
+        assertThat(SqlValidationService.normalizeValue(new java.math.BigDecimal("0.00"))).isEqualTo("0");
+        assertThat(SqlValidationService.normalizeValue(146.67))
+            .isNotEqualTo(SqlValidationService.normalizeValue(new java.math.BigDecimal("146.7")));
+        assertThat(SqlValidationService.normalizeValue("2025-03-01")).isEqualTo("2025-03-01");
+        assertThat(SqlValidationService.normalizeValue("개발팀")).isEqualTo("개발팀");
+    }
 }

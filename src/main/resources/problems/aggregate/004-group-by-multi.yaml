@@ -1,0 +1,36 @@
+id: "aggregate-004"
+title: "지역·상품별 판매 수량 — 다중 GROUP BY"
+category: "aggregate"
+difficulty: 1
+description: |
+  `sales` 테이블에서 **지역(`region`)과 상품(`product`) 조합**별로 판매 수량(`qty`) 합계를 구하세요.
+  판매 기록이 있는 조합만 나오면 됩니다 (판매가 없는 조합을 0 으로 채울 필요 없음).
+
+  결과 컬럼은 `region`, `product`, `total_qty` 세 개입니다. 정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["region", "product", "total_qty"]
+  rows:
+    - ["서울", "노트북", "4"]
+    - ["서울", "마우스", "18"]
+    - ["부산", "노트북", "3"]
+    - ["대구", "키보드", "5"]
+    - ["서울", "모니터", "6"]
+    - ["부산", "마우스", "4"]
+    - ["서울", "키보드", "8"]
+    - ["대구", "노트북", "1"]
+    - ["부산", "모니터", "3"]
+    - ["대구", "마우스", "6"]
+    - ["부산", "키보드", "2"]
+    - ["광주", "모니터", "1"]
+    - ["광주", "마우스", "2"]
+  orderMatters: false
+hint: "GROUP BY 에 컬럼을 두 개 쓰면 두 값의 조합마다 그룹이 하나씩 생깁니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT region,
+         product,
+         SUM(qty) AS total_qty
+  FROM sales
+  GROUP BY region, product

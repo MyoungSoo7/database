@@ -1,0 +1,31 @@
+id: "subquery-008"
+title: "저자별 책 수 — SELECT 절 스칼라 서브쿼리"
+category: "subquery"
+difficulty: 1
+description: |
+  모든 저자에 대해 이름과 `books` 에 등록된 책 수를 조회하세요.
+  결과 컬럼은 `name`, `book_count` 두 개입니다. 책이 없는 저자도 `book_count` 0 으로 나와야 합니다.
+
+  SELECT 목록 안에 저자별로 COUNT 를 돌려주는 **스칼라 서브쿼리** 를 넣어 보세요.
+  COUNT 는 대상 행이 없으면 NULL 이 아니라 0 을 돌려줍니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "book_count"]
+  rows:
+    - ["한강", 2]
+    - ["김영하", 2]
+    - ["무라카미 하루키", 2]
+    - ["조지 오웰", 2]
+    - ["정유정", 1]
+    - ["히가시노 게이고", 3]
+    - ["어니스트 헤밍웨이", 1]
+    - ["박완서", 0]
+    - ["알베르 카뮈", 0]
+  orderMatters: false
+hint: "SELECT a.name, (SELECT COUNT(*) FROM books b WHERE b.author_id = a.id) AS book_count FROM authors a"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT a.name,
+         (SELECT COUNT(*) FROM books b WHERE b.author_id = a.id) AS book_count
+  FROM authors a

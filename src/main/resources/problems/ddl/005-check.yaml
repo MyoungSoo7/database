@@ -1,0 +1,23 @@
+id: "ddl-005"
+title: "CHECK 제약 — 정원 범위 강제"
+category: "ddl"
+difficulty: 2
+description: |
+  `clubs.max_members`(동호회 정원)에는 **1 이상 100 이하**의 값만 들어가도록 `clubs` 테이블에 CHECK 제약을 추가하세요.
+
+  - 하한과 상한을 **한 제약 안에** 모두 넣으세요 (`BETWEEN` 을 쓰거나 두 비교를 `AND` 로 묶기).
+  - MySQL 8.0.16 부터 CHECK 제약은 실제로 강제됩니다. `NOT ENFORCED` 로 만들면 안 됩니다.
+  - 제약 이름은 자유입니다. 기존 데이터는 모두 이 범위 안에 있습니다.
+
+  제출은 SQL **한 문장**입니다. 채점은 초기 스키마에 제출한 문장을 실행한 뒤 `information_schema` 로 구조를 확인합니다.
+type: DDL
+schema: "schema.sql"
+validation:
+  type: QUERY
+  checkPerProfile:
+    mysql: "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.CHECK_CONSTRAINTS cc JOIN information_schema.TABLE_CONSTRAINTS tc ON tc.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA AND tc.CONSTRAINT_NAME = cc.CONSTRAINT_NAME WHERE cc.CONSTRAINT_SCHEMA = DATABASE() AND tc.TABLE_NAME = 'clubs' AND tc.CONSTRAINT_TYPE = 'CHECK' AND tc.ENFORCED = 'YES' AND REGEXP_LIKE(REPLACE(REPLACE(LOWER(cc.CHECK_CLAUSE), '`', ''), ' ', ''), '^[(](max_membersbetween1and100|[(](max_members>=1|max_members>0|1<=max_members|0<max_members)[)]and[(](max_members<=100|max_members<101|100>=max_members|101>max_members)[)]|[(](max_members<=100|max_members<101|100>=max_members|101>max_members)[)]and[(](max_members>=1|max_members>0|1<=max_members|0<max_members)[)])[)]$')) THEN 1 ELSE 0 END"
+  expectedValue: 1
+hint: "ALTER TABLE 테이블 ADD CONSTRAINT 이름 CHECK (조건)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  ALTER TABLE clubs ADD CONSTRAINT ck_clubs_max_members CHECK (max_members BETWEEN 1 AND 100)

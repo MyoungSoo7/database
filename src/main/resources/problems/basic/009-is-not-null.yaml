@@ -1,0 +1,27 @@
+id: "basic-009"
+title: "IS NOT NULL — 값이 있는 행만"
+category: "basic"
+difficulty: 1
+description: |
+  `employees` 테이블에서 영업 수당(`commission`)이 *입력되어 있는* 직원을 조회하세요.
+  수당이 NULL 이면 '입력 안 됨' 이고, 0 은 '0원으로 입력됨' 이므로 결과에 *포함* 됩니다.
+  결과 컬럼은 `name`, `commission` 두 개입니다.
+
+  NULL 은 `= NULL` / `<> NULL` 로 비교할 수 없습니다. 반드시 `IS NULL` / `IS NOT NULL` 을 씁니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "commission"]
+  rows:
+    - ["최동현", 300]
+    - ["강하늘", 100]
+    - ["한지원", 500]
+    - ["서준호", 0]
+    - ["임지아", 400]
+  orderMatters: false
+hint: "WHERE commission IS NOT NULL"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT name, commission
+  FROM employees
+  WHERE commission IS NOT NULL

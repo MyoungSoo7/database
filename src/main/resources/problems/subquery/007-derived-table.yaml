@@ -1,0 +1,27 @@
+id: "subquery-007"
+title: "도시별 1인당 평균 대출 건수 — FROM 절 파생 테이블"
+category: "subquery"
+difficulty: 2
+description: |
+  *대출 이력이 있는* 독자만 대상으로, 도시(`city`)별로 독자 1인당 평균 대출 건수를 구하세요.
+  결과 컬럼은 `city`, `avg_loans` 두 개이고, `avg_loans` 는 `ROUND(값, 2)` 로 소수 둘째 자리까지.
+  대출 이력이 없는 독자는 평균 계산에서 제외합니다(0건으로 세지 않음).
+
+  먼저 "독자별 대출 건수" 를 FROM 절 서브쿼리(**파생 테이블**, 별칭 필수)로 만들고,
+  그 결과를 다시 GROUP BY 해서 "집계의 집계" 를 구합니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["city", "avg_loans"]
+  rows:
+    - ["서울", "3.67"]
+    - ["부산", "2.50"]
+    - ["대구", "2.00"]
+  orderMatters: false
+hint: "FROM (SELECT reader_id, COUNT(*) AS cnt FROM loans GROUP BY reader_id) t JOIN readers ..."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT r.city, ROUND(AVG(t.cnt), 2) AS avg_loans
+  FROM (SELECT reader_id, COUNT(*) AS cnt FROM loans GROUP BY reader_id) t
+  JOIN readers r ON r.id = t.reader_id
+  GROUP BY r.city

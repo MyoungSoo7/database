@@ -1,0 +1,36 @@
+id: "join-015"
+title: "직원 · 상사 · 상사의 상사 — SELF JOIN 두 번 + LEFT JOIN"
+category: "join"
+difficulty: 3
+description: |
+  `staff` 의 `manager_id` 는 같은 `staff` 테이블의 `id`(직속 상사)를 가리킵니다. 상사가 없으면 NULL 입니다.
+  **모든 직원**(8명)에 대해 직원 이름, 직속 상사 이름, 그리고 **상사의 상사** 이름을 조회하세요.
+
+  - 직속 상사가 없으면 `manager` 와 `grand_manager` 모두 NULL.
+  - 직속 상사는 있지만 그 상사에게 상사가 없으면 `grand_manager` 만 NULL.
+  - NULL 은 다른 문자열로 바꾸지 말고 NULL 그대로 둡니다.
+
+  결과 컬럼은 `employee`, `manager`, `grand_manager` 세 개입니다. 정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["employee", "manager", "grand_manager"]
+  rows:
+    - ["한대표", null, null]
+    - ["오개발", "한대표", null]
+    - ["신코딩", "오개발", "한대표"]
+    - ["장영업", "한대표", null]
+    - ["문판매", "장영업", "한대표"]
+    - ["배인사", "한대표", null]
+    - ["조신입", "오개발", "한대표"]
+    - ["유수습", "배인사", "한대표"]
+  orderMatters: false
+hint: "staff 를 별칭 세 개(e, m, gm)로 씁니다. 첫 JOIN 을 INNER 로 하면 대표가, 둘째를 INNER 로 하면 대표 직속 직원들이 사라집니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT e.name AS employee,
+         m.name AS manager,
+         gm.name AS grand_manager
+  FROM staff e
+  LEFT JOIN staff m ON m.id = e.manager_id
+  LEFT JOIN staff gm ON gm.id = m.manager_id

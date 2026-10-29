@@ -1,0 +1,31 @@
+id: "join-008"
+title: "서울 부서 × 교육과정 조합 — CROSS JOIN"
+category: "join"
+difficulty: 1
+description: |
+  서울(`location = '서울'`)에 있는 부서마다 모든 교육과정(`courses`)을 한 번씩 개설하려고 합니다.
+  가능한 (부서, 과정) 조합을 모두 조회하세요.
+
+  결과 컬럼은 `dept_name`, `title` 두 개입니다. 정렬은 채점하지 않습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["dept_name", "title"]
+  rows:
+    - ["인사팀", "SQL 기초"]
+    - ["개발팀", "SQL 기초"]
+    - ["인사팀", "협상 기술"]
+    - ["개발팀", "협상 기술"]
+    - ["인사팀", "리더십"]
+    - ["개발팀", "리더십"]
+    - ["인사팀", "보안 교육"]
+    - ["개발팀", "보안 교육"]
+  orderMatters: false
+hint: "연결 조건 없이 모든 조합을 만드는 JOIN 은 CROSS JOIN 입니다."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT d.dept_name,
+         c.title
+  FROM departments d
+  CROSS JOIN courses c
+  WHERE d.location = '서울'

@@ -1,0 +1,27 @@
+id: "subquery-005"
+title: "한 번도 대출되지 않은 책 — NOT EXISTS"
+category: "subquery"
+difficulty: 1
+description: |
+  `loans` 에 *한 번도 등장하지 않은* 책을 조회하세요.
+  결과 컬럼은 `title`, `price` 두 개입니다.
+
+  `NOT EXISTS` 는 서브쿼리 결과가 비어 있을 때 TRUE 입니다.
+  NOT IN 과 달리 서브쿼리 쪽 NULL 에 흔들리지 않아 "없는 것 찾기" 에 안전합니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["title", "price"]
+  rows:
+    - ["달리기를 말할 때 내가 하고 싶은 이야기", 14000]
+    - ["동물농장", 9000]
+    - ["노인과 바다", 8500]
+    - ["천자문", 7000]
+    - ["옛 민요 모음", 9500]
+  orderMatters: false
+hint: "WHERE NOT EXISTS (SELECT 1 FROM loans WHERE loans.book_id = books.id)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT b.title, b.price
+  FROM books b
+  WHERE NOT EXISTS (SELECT 1 FROM loans l WHERE l.book_id = b.id)

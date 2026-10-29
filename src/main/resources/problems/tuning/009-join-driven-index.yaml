@@ -1,0 +1,40 @@
+id: "tuning-009"
+title: "조인 인덱스 — 끌려오는 테이블의 조인 컬럼 + 커버링"
+category: "tuning"
+difficulty: 3
+description: |
+  `vip_members` (20 명) 중 `PLATINUM` 등급 회원 6 명의 주문 건수와 합계를 구하는 대상 쿼리입니다.
+  `vip_members.id` 가 곧 `orders.customer_id` 이고, `orders`(30,000 건)에는 PK 말고 인덱스가 없습니다.
+
+  옵티마이저는 작은 쪽인 `vip_members` 를 먼저 읽고(드라이빙), 회원마다 `orders` 에서 짝을 찾습니다(드리븐).
+  그런데 `orders.customer_id` 에 인덱스가 없어서 `orders` 를 통째로 읽어 해시 조인합니다
+  (`type=ALL`, `Using join buffer (hash join)`).
+
+  **인덱스를 만들어서** `orders` 쪽이 회원 한 명당 그 회원의 주문만 인덱스로 찾아가게 하세요 (`type=ref`).
+  이번 기준은 한 단계 더: 주문 금액(`amount`)을 읽으러 테이블까지 가지 않도록 **커버링**이어야 합니다 (`Extra` 에 `Using index`).
+
+  - 인덱스는 **드리븐 테이블의 조인 컬럼**에 겁니다. 드라이빙 테이블의 PK 는 이미 있습니다.
+  - 컬럼 순서를 거꾸로 하면 커버링은 되지만 `type=index` 로 인덱스 전체를 훑습니다 — 불합격.
+
+  채점 기준 (`orders` 행): 풀스캔·인덱스 풀스캔 금지, Extra 에 Using index, 예상 rows 50 이하.
+type: TUNING
+schema: "009-schema.sql"
+target: "SELECT v.id, v.name, COUNT(*) AS order_cnt, SUM(orders.amount) AS total FROM vip_members v JOIN orders ON orders.customer_id = v.id WHERE v.tier = 'PLATINUM' GROUP BY v.id, v.name"
+tuning:
+  mode: INDEX
+  table: orders
+  maxRows: 50
+  forbid: [FULL_SCAN, FULL_INDEX_SCAN]
+  require: [COVERING]
+expected:
+  columns: ["id", "name", "order_cnt", "total"]
+  rows:
+    - [77, "이서준", 15, 894000]
+    - [318, "정민호", 15, 674500]
+    - [609, "윤채원", 15, 661000]
+    - [777, "임소율", 15, 693000]
+    - [1024, "서태윤", 15, 624500]
+    - [1492, "안시우", 15, 853500]
+  orderMatters: false
+hint: "조인 컬럼을 앞에, SELECT 에만 쓰이는 컬럼을 뒤에. CREATE INDEX idx_orders_customer_amount ON orders (customer_id, amount)"
+solution: "CREATE INDEX idx_orders_customer_amount ON orders (customer_id, amount)"

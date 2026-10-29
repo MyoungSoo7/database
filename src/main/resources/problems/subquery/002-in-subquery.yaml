@@ -1,0 +1,27 @@
+id: "subquery-002"
+title: "한국 작가의 책 — IN 서브쿼리"
+category: "subquery"
+difficulty: 1
+description: |
+  `authors.country` 가 '한국' 인 저자가 쓴 책을 `books` 에서 조회하세요.
+  결과 컬럼은 `title`, `genre` 두 개입니다.
+
+  JOIN 없이 `author_id IN (서브쿼리)` 로 풀어 보세요.
+  서브쿼리가 *여러 행* 을 돌려줄 때는 `=` 대신 `IN` 을 씁니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["title", "genre"]
+  rows:
+    - ["채식주의자", "소설"]
+    - ["소년이 온다", "소설"]
+    - ["살인자의 기억법", "소설"]
+    - ["여행의 이유", "에세이"]
+    - ["종의 기원", "소설"]
+  orderMatters: false
+hint: "WHERE author_id IN (SELECT id FROM authors WHERE ...)"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT title, genre
+  FROM books
+  WHERE author_id IN (SELECT id FROM authors WHERE country = '한국')

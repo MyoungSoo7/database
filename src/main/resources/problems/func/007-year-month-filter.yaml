@@ -1,0 +1,24 @@
+id: "func-007"
+title: "YEAR · MONTH — 2025년 3월 가입자"
+category: "func"
+difficulty: 1
+description: |
+  `members` 에서 *2025년 3월* 에 가입한 회원을 조회하세요. 가입 시각(`joined_at`)은 DATETIME 입니다.
+  결과 컬럼은 `name`, `join_date` 두 개이고, `join_date` 는 가입 *날짜* (`DATE(joined_at)`) 입니다.
+
+  주의: `joined_at BETWEEN '2025-03-01' AND '2025-03-31'` 은 31일 0시 0분까지만 포함해서 31일 낮·밤 가입자가 빠집니다.
+  `YEAR()`, `MONTH()` 로 연·월을 꺼내 비교하면 이런 경계 실수가 없습니다.
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["name", "join_date"]
+  rows:
+    - ["최지훈", "2025-03-01"]
+    - ["황보", "2025-03-31"]
+  orderMatters: false
+hint: "WHERE YEAR(joined_at) = ... AND MONTH(joined_at) = ..."
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT name, DATE(joined_at) AS join_date
+  FROM members
+  WHERE YEAR(joined_at) = 2025 AND MONTH(joined_at) = 3

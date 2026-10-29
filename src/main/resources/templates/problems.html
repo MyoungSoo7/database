@@ -26,6 +26,7 @@
     <h1>SQL 코딩 테스트 연습</h1>
 </header>
 <div class="container">
+    <p style="color:#555;font-size:0.9rem;">난이도: <span class="stars">★</span> 초급 · <span class="stars">★★</span> 중급 · <span class="stars">★★★</span> 고급</p>
     <div class="category-section" th:each="category : ${categories}">
         <h2 th:text="${category.name()}">카테고리</h2>
         <ul class="problem-list">

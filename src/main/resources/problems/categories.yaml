@@ -1,19 +1,31 @@
 categories:
   - id: basic
-    name: "기본 SELECT"
+    name: "기본 SELECT (WHERE·정렬·LIMIT)"
     order: 1
+  - id: func
+    name: "함수 (문자열·숫자·날짜·CASE)"
+    order: 2
+  - id: aggregate
+    name: "집계 (GROUP BY·HAVING)"
+    order: 3
   - id: join
     name: "JOIN"
-    order: 2
-  - id: advanced
-    name: "고급 쿼리 (서브쿼리, 윈도우함수, CTE)"
-    order: 3
-  - id: ddl
-    name: "DDL/제약조건"
     order: 4
+  - id: subquery
+    name: "서브쿼리·CTE"
+    order: 5
+  - id: window
+    name: "윈도우 함수"
+    order: 6
+  - id: dml
+    name: "데이터 변경 (INSERT·UPDATE·DELETE)"
+    order: 7
+  - id: ddl
+    name: "DDL·제약조건"
+    order: 8
   - id: mysql
     name: "MySQL/MariaDB 특화"
-    order: 5
+    order: 9
   - id: tuning
     name: "쿼리 튜닝 (실행계획·인덱스)"
-    order: 6
+    order: 10

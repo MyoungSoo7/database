@@ -1,0 +1,37 @@
+id: "window-001"
+title: "일별 누적 방문자와 누적 비율 — SUM() OVER"
+category: "window"
+difficulty: 1
+description: |
+  `daily_visits` 의 각 날짜에 대해 그날까지의 *누적 방문자 수* 와,
+  그것이 *전체 기간 방문자 합계의 몇 %* 인지를 함께 보여주세요.
+  결과 컬럼은 `visit_date`, `visitors`, `cum_visitors`, `cum_pct` 네 개입니다.
+  `cum_pct` = 누적 방문자 / 전체 합계 * 100 을 `ROUND(값, 1)` 로 소수 첫째 자리까지.
+  결과는 `visit_date` 오름차순.
+
+  - `SUM(x) OVER (ORDER BY 날짜)` : 첫 행부터 현재 행까지의 누적합
+  - `SUM(x) OVER ()` : OVER 가 비어 있으면 전체 합계가 모든 행에 붙습니다
+type: SELECT
+schema: "schema.sql"
+expected:
+  columns: ["visit_date", "visitors", "cum_visitors", "cum_pct"]
+  rows:
+    - ["2025-03-01", 120, "120", "8.3"]
+    - ["2025-03-02", 150, "270", "18.6"]
+    - ["2025-03-03", 90, "360", "24.8"]
+    - ["2025-03-04", 200, "560", "38.6"]
+    - ["2025-03-05", 170, "730", "50.3"]
+    - ["2025-03-06", 130, "860", "59.3"]
+    - ["2025-03-07", 160, "1020", "70.3"]
+    - ["2025-03-08", 110, "1130", "77.9"]
+    - ["2025-03-09", 180, "1310", "90.3"]
+    - ["2025-03-10", 140, "1450", "100.0"]
+  orderMatters: true
+hint: "SUM(visitors) OVER (ORDER BY visit_date) 와 SUM(visitors) OVER () 를 나눠 보세요"
+# 정답 예시 — 화면엔 안 나오고 오늘의 문제 풀이와 검증 테스트에 쓴다.
+solution: |
+  SELECT visit_date, visitors,
+         SUM(visitors) OVER (ORDER BY visit_date) AS cum_visitors,
+         ROUND(SUM(visitors) OVER (ORDER BY visit_date) * 100 / SUM(visitors) OVER (), 1) AS cum_pct
+  FROM daily_visits
+  ORDER BY visit_date
